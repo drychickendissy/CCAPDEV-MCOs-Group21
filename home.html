@@ -14,18 +14,21 @@
         <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
     </head>
     <body>
-    <div class="main-content">  
-        <div class="container">
-            <nav-bar active="home"></nav-bar>
-            <div class="page-section" style="--page-color: #a3b565;">
-                <div class="content">
-                    <h1 class="poppins-extrabold">Home Page</h1>
+        <div class="main-content"> 
+            <header-component></header-component>
+            <global-sidebar></global-sidebar> 
+            <div class="container">
+                <nav-bar active="home"></nav-bar>
+                <div class="page-section" style="--page-color: #a3b565;">
+                    <div class="content">
+                        <h1 class="poppins-extrabold">Home Page</h1>
+                    </div>
                 </div>
             </div>
-            <script src="header.js"></script>
-            <script src="global-sidebar.js"></script>
-            <script src="navbar.js"></script>
         </div>
-    </div>
+    <script src="data.js"></script>
+    <script src="header.js"></script>
+    <script src="global-sidebar.js"></script>
+    <script src="navbar.js"></script>    
     </body>
 </html>
