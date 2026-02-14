@@ -9,14 +9,14 @@ function parsePostDate(dateStr) {
 
 // Get votes received today for a post
 function getVotesReceivedToday(postId) {
-    const today = new Date().toDateString(); // Uses current date
+    const today = new Date().toDateString(); // Dynamic date
     const key = `votesReceived_${today}_${postId}`;
     return parseInt(localStorage.getItem(key) || '0', 10);
 }
 
 // Track that a vote was received today
 function trackVoteReceivedToday(postId) {
-    const today = new Date().toDateString(); // Uses current date
+    const today = new Date().toDateString(); // Dynamic date
     const key = `votesReceived_${today}_${postId}`;
     const count = parseInt(localStorage.getItem(key) || '0', 10);
     localStorage.setItem(key, String(count + 1));
@@ -25,12 +25,12 @@ function trackVoteReceivedToday(postId) {
 // Check if post date falls within timeframe
 function isPostInTimeframe(post, timeframe) {
     const postDate = parsePostDate(post.date);
-    const today = new Date(); // Current dynamic date
+    const today = new Date(); // Dynamic date
     
-    // Reset time to midnight for accurate day-to-day comparison
+    // Normalize time to midnight for comparison
     today.setHours(0, 0, 0, 0);
     postDate.setHours(0, 0, 0, 0);
-
+    
     const daysDiff = Math.floor((today - postDate) / (1000 * 60 * 60 * 24));
     
     switch(timeframe) {
@@ -53,7 +53,7 @@ function isPostInTimeframe(post, timeframe) {
 function getSortedPosts() {
     let posts = mockDatabase.posts.map(post => ({
         ...post,
-        score: (Number(post.upvotes) || 0) - (Number(post.downvotes) || 0),
+        score: (post.upvotes || 0) - (post.downvotes || 0),
         votesToday: getVotesReceivedToday(post.id)
     }));
 
@@ -65,10 +65,21 @@ function getSortedPosts() {
     }
 }
 
-// Render posts dynamically from mockDatabase sorted by score
+// Render posts dynamically
 function renderPopularPosts() {
     const postsContainer = document.querySelector('.paper-grid');
-    if (!postsContainer || !mockDatabase || !mockDatabase.posts) return;
+    const popularDate = document.getElementById('popularDate');
+
+    if (!postsContainer) return;
+
+    // Update Title Bar Date
+    if (popularDate) {
+        popularDate.textContent = new Date().toLocaleDateString("en-US", {
+            weekday: "long", year: "numeric", month: "long", day: "numeric"
+        });
+    }
+    
+    if (!mockDatabase || !mockDatabase.posts) return;
     
     postsContainer.innerHTML = '';
     const sortedPosts = getSortedPosts();
@@ -122,11 +133,14 @@ function renderPopularPosts() {
         postsContainer.appendChild(postElement);
     });
     
-    // Attach listeners
+    attachEventListeners();
+}
+
+function attachEventListeners() {
     document.querySelectorAll('.vote button').forEach(btn => {
         btn.onclick = () => {
             if (!localStorage.getItem("currentUserId")) {
-                AlertModal.show("Please login to interact.", "error");
+                AlertModal.show("Please login or sign up to interact.", "error");
                 return;
             }
             voteOnPost(btn.dataset.id, btn.dataset.action === 'up' ? 1 : -1);
@@ -136,7 +150,7 @@ function renderPopularPosts() {
     document.querySelectorAll('.open-btn').forEach(btn => {
         btn.onclick = () => {
             if (!localStorage.getItem("currentUserId")) {
-                AlertModal.show("Please login to interact.", "error");
+                AlertModal.show("Please login or sign up to interact.", "error");
                 return;
             }
             const post = mockDatabase.posts.find(p => p.id === btn.dataset.id);

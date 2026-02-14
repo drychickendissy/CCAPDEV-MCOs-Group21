@@ -14,13 +14,28 @@
     gap: 10px;
 }
 
+.popular-title img {
+    transform: translateY(-3px);
+}
+
+.title-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.masthead-sub {
+    font-size: 12px;
+    font-weight: 600;
+    color: #fdf8e2; 
+    opacity: 0.9;
+    margin-top: -10px;
+}
+
 .popular-controls {
     display: flex;
     align-items: center;
     gap: 10px;
     margin-bottom: 2rem;
-    margin-left: 0;
-
 }
 
 .popular-controls select {
@@ -32,5 +47,11 @@
     cursor: pointer;
     font-size: 12px;
     color: #ffffff;
+    font-weight: 600;
+}
+
+.popular-controls select option {
+    background-color: #ffffff;
+    color: #333333;
     font-weight: 600;
 }
