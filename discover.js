@@ -1,5 +1,11 @@
 let selectedCategories = [];
 
+function normalizeText(text) {
+    return text
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, ""); 
+}
+
 function renderDiscoverPosts() {
     const container = document.getElementById("discoverPosts");
     if (!container) return;
@@ -23,50 +29,59 @@ function renderDiscoverPosts() {
     });
 
     sortedPosts.forEach(post => {
-        const user = db.users.find(u => u.id === post.authorId) || { username: "Unknown" };
+        const user =
+            db.users.find(u => u.id === post.authorId) ||
+            { username: "Unknown" };
 
-        const postCard = document.createElement("div");
-        postCard.className = "post-card";
-        postCard.setAttribute("data-category", post.category.toLowerCase());
+        const article = document.createElement("article");
+        article.className = "article";
+        article.setAttribute("data-category", post.category.toLowerCase());
 
-        postCard.innerHTML = `
-            <div class="post-header">
-                <div class="user-info">
-                    <img src="assets/placeholder.png" class="avatar">
-                    <span class="username">${user.username}</span>
-                    <span class="meta">· ${post.date} • ${post.views || 0} views</span>
-                </div>
+        article.innerHTML = `
+            <div class="section-row poppins-regular">
+                <span>${post.category.toUpperCase()}</span>
+                <span>${post.views || 0} views</span>
             </div>
 
-            <hr>
+            <h2 class="headline poppins-extrabold">${post.title}</h2>
 
-            <h3 class="post-title">${post.title}</h3>
-            <p class="post-desc">${post.content}</p>
+            <div class="byline poppins-regular">
+                By <b>${user.username}</b> • ${post.date}
+            </div>
 
-            <div class="tags">
-                <span>${post.category}</span>
+            <div class="rule"></div>
+
+            <p class="excerpt poppins-regular">${post.content}</p>
+
+            <div class="article-actions">
+                <span class="chip poppins-regular">${post.category}</span>
+                <button class="open-btn" type="button">Open</button>
             </div>
         `;
 
-        postCard.addEventListener("click", () => {
+        article.querySelector(".open-btn").addEventListener("click", (e) => {
+            e.stopPropagation();
             openPostView(post.id);
         });
 
-        container.appendChild(postCard);
+        container.appendChild(article);
     });
 }
 
-
 function toggleFilter() {
     const overlay = document.getElementById("filterOverlay");
-    overlay.style.display = overlay.style.display === "flex" ? "none" : "flex";
+    overlay.style.display =
+        overlay.style.display === "flex" ? "none" : "flex";
 }
 
 document.addEventListener("click", function (event) {
     const overlay = document.getElementById("filterOverlay");
     const panel = document.getElementById("filterPanel");
 
-    if (!overlay.contains(event.target) && event.target.closest(".filter-btn") == null) {
+    if (!overlay || !panel) return;
+
+    if (!overlay.contains(event.target) &&
+        event.target.closest(".filter-btn") == null) {
         overlay.style.display = "none";
     }
 
@@ -102,9 +117,11 @@ function capitalize(text) {
     return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
-
 function applyFilters() {
-    const checkboxes = document.querySelectorAll(".filter-panel input[type='checkbox']");
+    const checkboxes = document.querySelectorAll(
+        ".filter-panel input[type='checkbox']"
+    );
+
     selectedCategories = [];
 
     checkboxes.forEach(cb => {
@@ -118,41 +135,35 @@ function applyFilters() {
 }
 
 function filterPosts() {
-    const searchInput = document.getElementById("searchInput").value.toLowerCase();
-    const posts = document.querySelectorAll(".post-card");
+    const rawInput = document.getElementById("searchInput").value;
+    const searchInput = normalizeText(rawInput);
+
+    const posts = document.querySelectorAll(".article");
 
     posts.forEach(post => {
-        const title = post.querySelector(".post-title").innerText.toLowerCase();
-        const content = post.querySelector(".post-desc").innerText.toLowerCase();
+        const title = normalizeText(
+            post.querySelector(".headline").innerText
+        );
+
+        const content = normalizeText(
+            post.querySelector(".excerpt").innerText
+        );
+
         const category = post.getAttribute("data-category");
 
         const matchesSearch =
-            title.includes(searchInput) || content.includes(searchInput);
+            title.includes(searchInput) ||
+            content.includes(searchInput);
 
         const matchesCategory =
             selectedCategories.length === 0 ||
             selectedCategories.includes(category);
 
-        post.style.display = (matchesSearch && matchesCategory) ? "flex" : "none";
+        post.style.display =
+            (matchesSearch && matchesCategory) ? "block" : "none";
     });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    renderDiscoverPosts();
-    setDiscoverDate();
-});
-
-function setDiscoverDate() {
-    const dateElement = document.getElementById("discoverDate");
-    if (!dateElement) return;
-
-    dateElement.textContent = new Date().toLocaleDateString("en-US", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric"
-    });
-}
 
 function openPostView(postId) {
     let db = mockDatabase;
@@ -204,7 +215,9 @@ function openPostView(postId) {
 function closePostView() {
     document.getElementById("singlePostView").style.display = "none";
     document.getElementById("discoverPosts").style.display = "grid";
+    filterPosts();
 }
+
 
 function addComment(postId) {
     const input = document.getElementById("newComment");
@@ -225,4 +238,21 @@ function addComment(postId) {
     localStorage.setItem("mockDatabase", JSON.stringify(db));
 
     openPostView(postId);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    renderDiscoverPosts();
+    setDiscoverDate();
+});
+
+function setDiscoverDate() {
+    const dateElement = document.getElementById("discoverDate");
+    if (!dateElement) return;
+
+    dateElement.textContent = new Date().toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+    });
 }
