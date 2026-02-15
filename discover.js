@@ -18,26 +18,25 @@ function renderDiscoverPosts() {
         db = JSON.parse(saved);
     }
 
+    const posts = db.posts;
+
     if (!db.posts || db.posts.length === 0) {
         container.innerHTML = "<p>No posts found.</p>";
         return;
     }
     generateCategoryFilters(db);
 
-    const sortedPosts = [...db.posts].sort((a, b) => {
-        return new Date(b.date) - new Date(a.date);
+    const sortedPosts = posts
+    .slice()
+    .sort((a, b) => b.lastInteraction - a.lastInteraction);
+
+
+    sortedPosts.forEach((post, index) => {
+    const locked = false; 
+    const article = buildNewspaperArticle(post, index, locked);
+    container.appendChild(article);
     });
 
-    sortedPosts.forEach(post => {
-        const user =
-            db.users.find(u => u.id === post.authorId) ||
-            { username: "Unknown" };
-
-        const locked = false; // you can add lock logic later
-        const article = buildNewspaperArticle(post, 0, locked);
-        container.appendChild(article);
-
-    });
 }
 
 function toggleFilter() {
@@ -144,7 +143,7 @@ function openPostView(postId) {
         db = JSON.parse(saved);
     }
 
-    const post = db.posts.find(p => p.id === postId);
+    const post = db.posts.find(p => String(p.id) === String(postId));
     if (!post) return;
 
     if (!post.comments) post.comments = [];
@@ -163,8 +162,9 @@ function openPostView(postId) {
             <p class="single-post-content">${post.content}</p>
 
             <div class="tags">
-                <span>${post.category}</span>
+                <span class="post-tag">${post.category}</span>
             </div>
+
 
             <div class="comment-section">
                 <h3>Comments</h3>
@@ -202,7 +202,7 @@ function addComment(postId) {
         db = JSON.parse(saved);
     }
 
-    const post = db.posts.find(p => p.id === postId);
+    const post = db.posts.find(p => String(p.id) === String(postId));
     if (!post.comments) post.comments = [];
 
     post.comments.push(text);
@@ -258,6 +258,8 @@ function buildNewspaperArticle(post, index, locked) {
     el.className = "article" + (locked ? " locked" : "");
     el.setAttribute("data-locked", locked ? "1" : "0");
     el.setAttribute("data-id", post.id);
+    el.setAttribute("data-category", String(post.category).toLowerCase());
+
 
     el.innerHTML =
         '<div class="section-row poppins-regular">' +
@@ -292,7 +294,7 @@ document.getElementById("discoverPosts").onclick = function (e) {
     const saved = localStorage.getItem("mockDatabase");
     if (saved) db = JSON.parse(saved);
 
-    const post = db.posts.find(p => p.id === id);
+    const post = db.posts.find(p => String(p.id) === String(id));
     if (!post) return;
 
     post.votes = post.votes || {};
