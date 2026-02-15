@@ -12,13 +12,7 @@ function renderDiscoverPosts() {
 
     container.innerHTML = "";
 
-    let db = mockDatabase;
-    const saved = localStorage.getItem("mockDatabase");
-    if (saved) {
-        db = JSON.parse(saved);
-    }
-
-    const posts = db.posts;
+    const db = PostsComponent_Instance.getDatabase();
 
     if (!db.posts || db.posts.length === 0) {
         container.innerHTML = "<p>No posts found.</p>";
@@ -26,15 +20,14 @@ function renderDiscoverPosts() {
     }
     generateCategoryFilters(db);
 
-    const sortedPosts = posts
-    .slice()
-    .sort((a, b) => b.lastInteraction - a.lastInteraction);
-
+    const sortedPosts = PostsComponent_Instance.getFilteredPosts({ sortBy: 'hot' });
+    const isLoggedIn = (localStorage.getItem("currentUserId") || "").trim().length > 0;
+    const FREE_COUNT = 14; // 0-14 = 15 free posts
 
     sortedPosts.forEach((post, index) => {
-    const locked = false; 
-    const article = buildNewspaperArticle(post, index, locked);
-    container.appendChild(article);
+        const locked = !isLoggedIn && index >= FREE_COUNT;
+        const article = PostsComponent_Instance.buildNewspaperArticle(post, index, locked);
+        container.appendChild(article);
     });
 
 }
@@ -136,20 +129,109 @@ function filterPosts() {
 }
 
 
-function openPostView(postId) {
-    let db = mockDatabase;
-    const saved = localStorage.getItem("mockDatabase");
-    if (saved) {
-        db = JSON.parse(saved);
+function openPostModal(postId) {
+    const post = PostsComponent_Instance.getPostById(postId);
+    if (!post) return;
+    
+    const user = PostsComponent_Instance.getUserById(post.authorId) || { username: "Unknown", photo: "assets/placeholder.png" };
+    const score = (Number(post.upvotes) || 0) - (Number(post.downvotes) || 0);
+    
+    function escapeHtml(str) {
+        return String(str == null ? "" : str)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
     }
+    
+    function prettyCategory(cat) {
+        const c = String(cat || "").toLowerCase();
+        if (c === "news") return "News";
+        if (c === "help") return "Help";
+        return "Discussion";
+    }
+    
+    // Render full article in modal
+    const modalContent = document.getElementById("modal-post-content");
+    modalContent.innerHTML = 
+        '<div class="post-author-header poppins-regular">' +
+            '<img src="' + user.photo + '" alt="' + escapeHtml(user.username) + '" class="post-author-avatar">' +
+            '<div class="post-author-info">' +
+                '<span class="post-author-username poppins-extrabold">' + escapeHtml(user.username) + '</span>' +
+                '<span class="post-author-date">' + escapeHtml(post.date) + (post.lastEdited ? ' &#8226; Edited ' + post.lastEdited : '') + '</span>' +
+            '</div>' +
+        '</div>' +
+        '<h2 class="headline poppins-extrabold">' + escapeHtml(post.title) + '</h2>' +
+        '<div class="section-row poppins-regular">' +
+            '<span>' + (Number(post.views) || 0) + ' Views &#8226; &#9650; ' + (Number(post.upvotes) || 0) + ' &#9660; ' + (Number(post.downvotes) || 0) + '</span>' +
+        '</div>' +
+        '<div class="rule"></div>' +
+        '<p class="excerpt poppins-regular">' + escapeHtml(post.content) + '</p>' +
+        '<div class="tags-mini"><span>' + prettyCategory(post.category) + '</span></div>';
+    
+    // Render comments
+    renderComments(post);
+    
+    // Show modal
+    const modal = document.getElementById("post-view-modal");
+    modal.style.display = "flex";
+    modal.setAttribute("data-post-id", postId);
+    
+    // Close backdrop click
+    const backdrop = modal.querySelector(".modal-backdrop");
+    backdrop.onclick = function(e) {
+        if (e.target === backdrop) {
+            modal.style.display = "none";
+        }
+    };
+}
+
+function renderComments(post) {
+    const comments = post.comments || [];
+    const commentsList = document.getElementById("comments-list");
+    const commentCount = document.getElementById("comment-count");
+    
+    commentCount.textContent = comments.length;
+    commentsList.innerHTML = "";
+    
+    function escapeHtml(str) {
+        return String(str == null ? "" : str)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+    
+    comments.forEach(function(comment) {
+        const commentEl = document.createElement("div");
+        commentEl.className = "comment-item";
+        
+        const user = PostsComponent_Instance.getUserById(comment.userId) || { username: "Unknown" };
+        
+        commentEl.innerHTML = 
+            '<div class="comment-header poppins-regular">' +
+                '<span class="comment-author poppins-extrabold">' + escapeHtml(user.username) + '</span>' +
+                '<span class="comment-date">' + escapeHtml(comment.date || new Date().toLocaleDateString()) + '</span>' +
+            '</div>' +
+            '<p class="comment-text poppins-regular">' + escapeHtml(comment.text) + '</p>';
+        
+        commentsList.appendChild(commentEl);
+    });
+}
+
+function closePostModal() {
+    document.getElementById('post-view-modal').style.display = 'none';
+}
+
+function openPostView(postId) {
+    let db = PostsComponent_Instance.getDatabase();
 
     const post = db.posts.find(p => String(p.id) === String(postId));
     if (!post) return;
 
     if (!post.comments) post.comments = [];
-
-    const author = db.users.find(u => u.id === post.authorId);
-    const authorName = author ? author.username : "Unknown User";
 
     const grid = document.getElementById("discoverPosts");
     const singleView = document.getElementById("singlePostView");
@@ -159,23 +241,13 @@ function openPostView(postId) {
 
     singleView.innerHTML = `
         <div class="single-post-card">
-            <span class="post-tag single-tag">${post.category}</span>
             <button class="back-btn" onclick="closePostView()">← Back</button>
 
             <h2 class="single-post-title">${post.title}</h2>
-            <div class="byline poppins-regular">
-                By <b>${authorName}</b> • ${post.date}
-            </div>
             <p class="single-post-content">${post.content}</p>
-            <div class="article-actions">
-                <span class="chip poppins-regular">
-                    Score: <b>${(post.upvotes || 0) - (post.downvotes || 0)}</b>
-                </span>
 
-                <div class="vote">
-                    <button type="button" data-action="up-single" data-id="${post.id}">▲</button>
-                    <button type="button" data-action="down-single" data-id="${post.id}">▼</button>
-                </div>
+            <div class="tags">
+                <span class="post-tag">${post.category}</span>
             </div>
 
 
@@ -195,12 +267,14 @@ function openPostView(postId) {
             </div>
         </div>
     `;
+
+    PostsComponent_Instance.incrementViewCount(postId);
 }
 
 function closePostView() {
     document.getElementById("singlePostView").style.display = "none";
     document.getElementById("discoverPosts").style.display = "grid";
-    renderDiscoverPosts();
+    filterPosts();
 }
 
 
@@ -209,11 +283,7 @@ function addComment(postId) {
     const text = input.value.trim();
     if (!text) return;
 
-    let db = mockDatabase;
-    const saved = localStorage.getItem("mockDatabase");
-    if (saved) {
-        db = JSON.parse(saved);
-    }
+    let db = PostsComponent_Instance.getDatabase();
 
     const post = db.posts.find(p => String(p.id) === String(postId));
     if (!post.comments) post.comments = [];
@@ -243,64 +313,7 @@ function setDiscoverDate() {
 }
 
 function buildNewspaperArticle(post, index, locked) {
-    let db = mockDatabase;
-    const saved = localStorage.getItem("mockDatabase");
-    if (saved) db = JSON.parse(saved);
-
-    const author = db.users.find(u => u.id === post.authorId);
-    const authorName = author ? author.username : "Unknown User";
-
-
-    function escapeHtml(str) {
-        return String(str == null ? "" : str)
-            .replaceAll("&", "&amp;")
-            .replaceAll("<", "&lt;")
-            .replaceAll(">", "&gt;")
-            .replaceAll('"', "&quot;")
-            .replaceAll("'", "&#039;");
-    }
-
-    function excerpt(text, n) {
-        var t = String(text || "").trim().replace(/\s+/g, " ");
-        if (t.length <= n) return t;
-        return t.slice(0, n).trim() + "…";
-    }
-
-    function prettyCategory(cat) {
-        var c = String(cat || "").toLowerCase();
-        if (c === "news") return "News";
-        if (c === "help") return "Help";
-        return "Discussion";
-    }
-
-    const score = (Number(post.upvotes) || 0) - (Number(post.downvotes) || 0);
-
-    const el = document.createElement("article");
-    el.className = "article" + (locked ? " locked" : "");
-    el.setAttribute("data-locked", locked ? "1" : "0");
-    el.setAttribute("data-id", post.id);
-    el.setAttribute("data-category", String(post.category).toLowerCase());
-
-
-    el.innerHTML =
-        '<div class="section-row poppins-regular">' +
-            '<span>' + prettyCategory(post.category) + '</span>' +
-            '<span>' + (Number(post.views) || 0) + ' views</span>' +
-        '</div>' +
-        '<h2 class="headline poppins-extrabold">' + escapeHtml(post.title) + '</h2>' +
-        '<div class="byline poppins-regular">By <b>' + escapeHtml(authorName) + '</b> • ' + escapeHtml(post.date) + '</div>' +
-        '<div class="rule"></div>' +
-        '<p class="excerpt poppins-regular">' + escapeHtml(excerpt(post.content, 140)) + '</p>' +
-        '<div class="article-actions">' +
-            '<span class="chip poppins-regular">Score: <b>' + score + '</b></span>' +
-            '<div class="vote">' +
-                '<button type="button" data-action="up" data-id="' + post.id + '">▲</button>' +
-                '<button type="button" data-action="down" data-id="' + post.id + '">▼</button>' +
-            '</div>' +
-            '<button class="open-btn" type="button" data-action="open" data-id="' + post.id + '">Open</button>' +
-        '</div>';
-
-    return el;
+    return PostsComponent_Instance.buildNewspaperArticle(post, index, locked);
 }
 
 document.getElementById("discoverPosts").onclick = function (e) {
@@ -311,102 +324,67 @@ document.getElementById("discoverPosts").onclick = function (e) {
     const id = t.getAttribute("data-id");
     if (!action || !id) return;
 
-    let db = mockDatabase;
-    const saved = localStorage.getItem("mockDatabase");
-    if (saved) db = JSON.parse(saved);
-
-    const post = db.posts.find(p => String(p.id) === String(id));
+    const post = PostsComponent_Instance.getPostById(id);
     if (!post) return;
 
-    post.votes = post.votes || {};
-    const userId = (localStorage.getItem("currentUserId") || "").trim();
-    if (!userId) {
-        AlertModal.show("Please login to interact.", "error");
+    const isLoggedIn = (localStorage.getItem("currentUserId") || "").trim().length > 0;
+    const isLocked = post && post.locked;
+
+    if (!isLoggedIn || isLocked) {
+        AlertModal.show("Please login or sign up to view and interact with posts.", "error");
         return;
-    }
-
-    const prev = post.votes[userId] || null;
-
-    function applyVote(next) {
-        if (prev === "up") post.upvotes--;
-        if (prev === "down") post.downvotes--;
-
-        if (next === "up") post.upvotes++;
-        if (next === "down") post.downvotes++;
-
-        if (next) post.votes[userId] = next;
-        else delete post.votes[userId];
     }
 
     if (action === "up") {
-        applyVote(prev === "up" ? null : "up");
-        AlertModal.show("Vote updated!", "success");
+        PostsComponent_Instance.voteOnPost(id, "up");
+        renderDiscoverPosts();
+    } else if (action === "down") {
+        PostsComponent_Instance.voteOnPost(id, "down");
+        renderDiscoverPosts();
+    } else if (action === "open" || action === "comment") {
+        PostsComponent_Instance.incrementViewCount(id);
+        openPostModal(id);
     }
-
-    if (action === "down") {
-        applyVote(prev === "down" ? null : "down");
-        AlertModal.show("Vote updated!", "success");
-    }
-
-    if (action === "open") {
-        openPostView(id);
-        return;
-    }
-
-    localStorage.setItem("mockDatabase", JSON.stringify(db));
-    renderDiscoverPosts();
 };
 
-document.getElementById("singlePostView").onclick = function (e) {
-    const t = e.target;
-    if (!t) return;
-
-    const action = t.getAttribute("data-action");
-    const id = t.getAttribute("data-id");
-    if (!action || !id) return;
-
-    let db = mockDatabase;
-    const saved = localStorage.getItem("mockDatabase");
-    if (saved) db = JSON.parse(saved);
-
-    const post = db.posts.find(p => String(p.id) === String(id));
-    if (!post) return;
-
-    post.votes = post.votes || {};
-    post.upvotes = post.upvotes || 0;
-    post.downvotes = post.downvotes || 0;
-
-    const userId = (localStorage.getItem("currentUserId") || "").trim();
-    if (!userId) {
-        AlertModal.show("Please login to interact.", "error");
-        return;
+// Comment submission for discover
+document.addEventListener("DOMContentLoaded", function() {
+    const submitBtn = document.getElementById("submit-comment-btn");
+    if (submitBtn) {
+        submitBtn.onclick = function() {
+            const modal = document.getElementById("post-view-modal");
+            const postId = modal.getAttribute("data-post-id");
+            const commentText = document.getElementById("comment-input").value.trim();
+            const currentUserId = (localStorage.getItem("currentUserId") || "").trim();
+            
+            if (!currentUserId) {
+                AlertModal.show("Please login to add comments.", "error");
+                return;
+            }
+            
+            if (!commentText) {
+                AlertModal.show("Comment cannot be empty.", "error");
+                return;
+            }
+            
+            const post = PostsComponent_Instance.getPostById(postId);
+            if (!post) return;
+            
+            // Add comment to post
+            post.comments = post.comments || [];
+            post.comments.push({
+                userId: currentUserId,
+                text: commentText,
+                date: new Date().toLocaleDateString()
+            });
+            
+            // Save to localStorage
+            localStorage.setItem('mockDatabase', JSON.stringify(PostsComponent_Instance.getDatabase()));
+            
+            // Clear input and re-render
+            document.getElementById("comment-input").value = "";
+            renderComments(post);
+            AlertModal.show("Comment posted!", "success");
+        };
     }
-
-    const prev = post.votes[userId] || null;
-
-    function applyVote(next) {
-        if (prev === "up") post.upvotes--;
-        if (prev === "down") post.downvotes--;
-
-        if (next === "up") post.upvotes++;
-        if (next === "down") post.downvotes++;
-
-        if (next) post.votes[userId] = next;
-        else delete post.votes[userId];
-    }
-
-    if (action === "up-single") {
-        applyVote(prev === "up" ? null : "up");
-        AlertModal.show("Vote updated!", "success");
-    }
-
-    if (action === "down-single") {
-        applyVote(prev === "down" ? null : "down");
-        AlertModal.show("Vote updated!", "success");
-    }
-
-    localStorage.setItem("mockDatabase", JSON.stringify(db));
-
-    renderDiscoverPosts();   // 🔥 ADD THIS
-    openPostView(id);
-};
+});

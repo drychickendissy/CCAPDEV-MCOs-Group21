@@ -86,30 +86,202 @@ class ProfileMain extends HTMLElement {
 class ProfilePosts extends HTMLElement {
     connectedCallback() {
         this.render();
+        this.attachListeners();
     }
 
     render() {
-        this.innerHTML =
-            '<section class="profile-posts-section card card--dark" id="profile-posts-section">' +
-            '<h1 class="poppins-extrabold card__title">User Posts</h1>' +
-            '<div class="profile-posts" id="profile-posts-list">' +
-            '<div class="profile-post card card--light" id="profile-post-1">' +
-            '<h3 class="post-title poppins-extrabold">My First Post</h3>' +
-            '<p class="post-content poppins-regular">This is the content of my first post. I\'m excited to share my thoughts with the community!</p>' +
-            '<div class="post-meta poppins-regular">Posted on Jan 1, 2026 - 150 views</div>' +
-            '</div>' +
-            '<div class="profile-post card card--light" id="profile-post-2">' +
-            '<h3 class="post-title poppins-extrabold">What\'s the best coffee spot around campus?</h3>' +
-            '<p class="post-content poppins-regular">Hi! I\'m looking for a good coffee spot around campus. Do any of you guys have suggestions?</p>' +
-            '<div class="post-meta poppins-regular">Posted on Feb 4, 2026 - 150 views</div>' +
-            '</div>' +
-            '<div class="profile-post card card--light" id="profile-post-3">' +
-            '<h3 class="post-title poppins-extrabold">67</h3>' +
-            '<p class="post-content poppins-regular">can we stop using six-seven. PLEASE. it\'s like waking up sleeper agents in my class all THE TIME. IT IS SOOOO ANNOYING.</p>' +
-            '<div class="post-meta poppins-regular">Posted on Feb 4, 2026 - 150 views</div>' +
-            '</div>' +
-            '</div>' +
-            '</section>';
+        const currentUserId = typeof CURRENT_USER_ID !== 'undefined' ? CURRENT_USER_ID : "u1";
+        const db = typeof PostsComponent_Instance !== 'undefined' ? PostsComponent_Instance.getDatabase() : null;
+        
+        let userPosts = [];
+        if (db && db.posts) {
+            userPosts = db.posts.filter(post => post.authorId === currentUserId);
+        }
+
+        let postsHTML = '<section class="profile-posts-section" id="profile-posts-section">' +
+            '<h1 class="poppins-extrabold" style="color: #fdf8e2; margin-bottom: 12px;">User Posts</h1>' +
+            '<div class="profile-posts" id="profile-posts-list">';
+
+        if (userPosts.length === 0) {
+            postsHTML += '<p class="poppins-regular" style="text-align: center; padding: 20px; color: #fdf8e2;">No posts yet</p>';
+        }
+
+        this.innerHTML = postsHTML + '</div></section>';
+        
+        // Use PostsComponent to render posts as newspaper articles
+        if (userPosts.length > 0) {
+            const postsList = this.querySelector('#profile-posts-list');
+            userPosts.forEach((post, index) => {
+                // Create wrapper div for profile post styling
+                const wrapper = document.createElement('div');
+                wrapper.className = 'profile-post-wrapper';
+                wrapper.setAttribute('data-id', post.id);
+                
+                // Render as newspaper article
+                const articleElement = PostsComponent_Instance.buildNewspaperArticle(post, index, false, 'default');
+                
+                // Add three-dot menu for edit/delete
+                const menuHTML = document.createElement('div');
+                menuHTML.className = 'post-menu-container';
+                menuHTML.innerHTML = 
+                    '<button class="post-menu-btn" data-id="' + post.id + '">&#8942;</button>' +
+                    '<div class="post-menu-dropdown" data-id="' + post.id + '" style="display: none;">' +
+                        '<button class="post-menu-item post-edit-btn" data-id="' + post.id + '">Edit</button>' +
+                        '<button class="post-menu-item post-delete-btn" data-id="' + post.id + '">Delete</button>' +
+                    '</div>';
+                
+                // Insert menu into article at the top
+                const authorHeader = articleElement.querySelector('.post-author-header');
+                if (authorHeader) {
+                    authorHeader.appendChild(menuHTML);
+                }
+                
+                wrapper.appendChild(articleElement);
+                postsList.appendChild(wrapper);
+            });
+        }
+    }
+
+    attachListeners() {
+        const self = this;
+        const isLoggedIn = (localStorage.getItem("currentUserId") || "").trim().length > 0;
+        
+        // Vote button handlers
+        this.querySelectorAll('.vote button, [data-action="up"], [data-action="down"]').forEach(btn => {
+            btn.onclick = (e) => {
+                if (!isLoggedIn) {
+                    AlertModal.show("Please login or sign up to view and interact with posts.", "error");
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                }
+                const action = btn.getAttribute('data-action');
+                const postId = btn.getAttribute('data-id');
+                if (typeof PostsComponent_Instance !== 'undefined') {
+                    PostsComponent_Instance.voteOnPost(postId, action);
+                    self.render();
+                    self.attachListeners();
+                }
+            };
+        });
+
+        // Open and Comment button handlers
+        this.querySelectorAll('[data-action="open"], [data-action="comment"]').forEach(btn => {
+            btn.onclick = (e) => {
+                if (!isLoggedIn) {
+                    AlertModal.show("Please login or sign up to view and interact with posts.", "error");
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                }
+                const postId = btn.getAttribute('data-id');
+                if (typeof PostsComponent_Instance !== 'undefined' && typeof openPostModal !== 'undefined') {
+                    PostsComponent_Instance.incrementViewCount(postId);
+                    openPostModal(postId);
+                }
+            };
+        });
+        
+        // Menu button handlers
+        this.querySelectorAll('.post-menu-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const postId = btn.getAttribute('data-id');
+                const dropdown = this.querySelector('.post-menu-dropdown[data-id="' + postId + '"]');
+                
+                // Close all other dropdowns
+                this.querySelectorAll('.post-menu-dropdown').forEach(dd => {
+                    if (dd !== dropdown) {
+                        dd.style.display = 'none';
+                    }
+                });
+                
+                // Toggle current dropdown
+                if (dropdown) {
+                    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+                }
+            };
+        });
+        
+        // Edit button handlers
+        this.querySelectorAll('.post-edit-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const postId = btn.getAttribute('data-id');
+                const post = PostsComponent_Instance.getPostById(postId);
+                if (post) {
+                    const modal = document.getElementById('edit-post-modal');
+                    const titleInput = document.getElementById('edit-post-title');
+                    const contentInput = document.getElementById('edit-post-content');
+                    const saveBtn = document.getElementById('modal-save-btn');
+                    const cancelBtn = document.getElementById('modal-cancel-btn');
+                    const closeBtn = document.getElementById('modal-close');
+                    
+                    // Populate modal with current post data
+                    titleInput.value = post.title;
+                    contentInput.value = post.content;
+                    
+                    // Show modal
+                    modal.style.display = 'flex';
+                    
+                    // Save handler
+                    const saveHandler = () => {
+                        const newTitle = titleInput.value.trim();
+                        const newContent = contentInput.value.trim();
+                        
+                        if (newTitle === '') {
+                            if (typeof AlertModal !== 'undefined') {
+                                AlertModal.show('Title cannot be empty', 'error');
+                            }
+                            return;
+                        }
+                        
+                        if (newContent === '') {
+                            if (typeof AlertModal !== 'undefined') {
+                                AlertModal.show('Content cannot be empty', 'error');
+                            }
+                            return;
+                        }
+                        
+                        PostsComponent_Instance.editPost(postId, newTitle, newContent);
+                        if (typeof AlertModal !== 'undefined') {
+                            AlertModal.show('Post updated!', 'success');
+                        }
+                        
+                        modal.style.display = 'none';
+                        self.render();
+                        self.attachListeners();
+                    };
+                    
+                    // Cancel/Close handler
+                    const closeHandler = () => {
+                        modal.style.display = 'none';
+                    };
+                    
+                    // Remove old listeners to prevent duplicates
+                    saveBtn.onclick = saveHandler;
+                    cancelBtn.onclick = closeHandler;
+                    closeBtn.onclick = closeHandler;
+                    
+                    // Close modal when clicking outside
+                    modal.onclick = (e) => {
+                        if (e.target === modal) {
+                            closeHandler();
+                        }
+                    };
+                }
+            };
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            const menus = this.querySelectorAll('.post-menu-dropdown');
+            menus.forEach(menu => {
+                if (!menu.parentElement.contains(e.target)) {
+                    menu.style.display = 'none';
+                }
+            });
+        });
     }
 }
 
