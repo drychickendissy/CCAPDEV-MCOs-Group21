@@ -1,15 +1,17 @@
+// data.js
+
 // Sets the current user ID based on localStorage, defaulting to "u1" if not set
-var CURRENT_USER_ID = localStorage.getItem("currentUserId") || "u1";
+var CURRENT_USER_ID = localStorage.getItem("currentUserId") || "";
 
 // Fetches the mock database from localStorage
-const savedData = JSON.parse(localStorage.getItem('mockDatabase'));
+const savedData = JSON.parse(localStorage.getItem("mockDatabase"));
 
-// Loads the hardcoded default database and merges it with any saved data from localStorage 
+// Loads the hardcoded default database and merges it with any saved data from localStorage
 // (i.e. if a new user was created, it will be added to the default users)
 const defaultDatabase = {
-    // Array of user objects with properties like id, username, email, password, etc.
-    users: [
-        {
+  // ✅ Random user accounts (format preserved)
+  users: [
+   {
             id: "u1",
             username: "CCAPDEV-G21",
             email: "ccapdev.group21@dlsu.edu.ph",
@@ -76,49 +78,49 @@ const defaultDatabase = {
         }
     ],
 
-    // Array of post objects with properties like id, authorId, title, content, date, upvotes, downvotes, etc.
-    posts: [
-        { id: "p1", authorId: "u1", title: "CCAPDEV Help", content: "...", date: "Feb 4, 2026", upvotes: 12, downvotes: 1 },
-        { id: "p2", authorId: "u2", title: "Campus Events", content: "...", date: "Feb 5, 2026", upvotes: 4, downvotes: 2 },
-        { id: "p3", authorId: "u1", title: "Study Group", content: "...", date: "Feb 6, 2026", upvotes: 7, downvotes: 0 },
-        { id: "p4", authorId: "u3", title: "Project Ideas", content: "...", date: "Feb 7, 2026", upvotes: 15, downvotes: 3 },
-        { id: "p5", authorId: "u4", title: "Mental Health Resources", content: "...", date: "Feb 8, 2026", upvotes: 20, downvotes: 1 },
-        { id: "p6", authorId: "u5", title: "Internship Opportunities", content: "...", date: "Feb 9, 2026", upvotes: 10, downvotes: 0 }
-
-    ]
+  // ✅ Keep posts minimal here (Home uses its own 20 demo posts in home.html)
+  // These can be used by other pages that rely on mockDatabase.posts.
+  posts: [
+    { id: "p1", authorId: "u1", title: "CCAPDEV Help", content: "...", date: "Feb 4, 2026", upvotes: 12, downvotes: 1, views: 120, category: "help" },
+    { id: "p2", authorId: "u2", title: "Campus Events", content: "...", date: "Feb 5, 2026", upvotes: 4, downvotes: 2, views: 300, category: "news" },
+    { id: "p3", authorId: "u1", title: "Study Group", content: "...", date: "Feb 6, 2026", upvotes: 7, downvotes: 0, views: 180, category: "discussion" },
+    { id: "p4", authorId: "u3", title: "Project Ideas", content: "...", date: "Feb 7, 2026", upvotes: 15, downvotes: 3, views: 410, category: "discussion" },
+    { id: "p5", authorId: "u4", title: "Mental Health Resources", content: "...", date: "Feb 8, 2026", upvotes: 20, downvotes: 1, views: 520, category: "news" },
+    { id: "p6", authorId: "u5", title: "Internship Opportunities", content: "...", date: "Feb 9, 2026", upvotes: 10, downvotes: 0, views: 260, category: "news" }
+  ]
 };
 
-// Function to merge saved data with default data, ensuring that new users are added and 
+// Function to merge saved data with default data, ensuring that new users are added and
 // existing users are updated without losing any information
 function mergeWithDefaults(saved, defaults) {
-    if (!saved) return defaults;
-    
-    // Start with default users merged with saved data
-    var mergedUsers = (defaults.users || []).map(function (defaultUser) {
-        var savedUser = (saved.users || []).find(function (u) {
-            return u && u.id === defaultUser.id;
-        });
-        return savedUser ? Object.assign({}, defaultUser, savedUser) : defaultUser;
+  if (!saved) return defaults;
+
+  // Start with default users merged with saved data
+  var mergedUsers = (defaults.users || []).map(function (defaultUser) {
+    var savedUser = (saved.users || []).find(function (u) {
+      return u && u.id === defaultUser.id;
     });
-    
-    // Add any new users from saved data that don't exist in defaults
-    if (saved.users && Array.isArray(saved.users)) {
-        saved.users.forEach(function (savedUser) {
-            var existsInDefaults = (defaults.users || []).some(function (u) {
-                return u && u.id === savedUser.id;
-            });
-            if (!existsInDefaults) {
-                mergedUsers.push(savedUser);
-            }
-        });
-    }
-    
-    // Return the merged database object, ensuring that posts are also included from saved data if available
-    return {
-        ...defaults,
-        users: mergedUsers,
-        posts: saved.posts || defaults.posts || []
-    };
+    return savedUser ? Object.assign({}, defaultUser, savedUser) : defaultUser;
+  });
+
+  // Add any new users from saved data that don't exist in defaults
+  if (saved.users && Array.isArray(saved.users)) {
+    saved.users.forEach(function (savedUser) {
+      var existsInDefaults = (defaults.users || []).some(function (u) {
+        return u && u.id === savedUser.id;
+      });
+      if (!existsInDefaults) {
+        mergedUsers.push(savedUser);
+      }
+    });
+  }
+
+  // Return the merged database object, ensuring that posts are also included from saved data if available
+  return {
+    ...defaults,
+    users: mergedUsers,
+    posts: saved.posts || defaults.posts || []
+  };
 }
 
 // Create the mock database by merging saved data with defaults, ensuring that any new users or posts are preserved
@@ -126,12 +128,18 @@ const mockDatabase = mergeWithDefaults(savedData, defaultDatabase);
 
 // Function to save the current state of the mock database back to localStorage
 function saveToLocalDB() {
-    localStorage.setItem('mockDatabase', JSON.stringify(mockDatabase));
+  localStorage.setItem("mockDatabase", JSON.stringify(mockDatabase));
 }
 
 // Logout function to clear current user session and redirect to login page
 function logout() {
-    localStorage.removeItem("currentUserId");
-    localStorage.removeItem("rememberMeToken");
-    window.location.href = "login.html";
+  localStorage.removeItem("currentUserId");
+  localStorage.removeItem("rememberMeToken");
+  window.location.href = "login.html";
 }
+
+// expose globals for other pages/scripts
+window.CURRENT_USER_ID = CURRENT_USER_ID;
+window.mockDatabase = mockDatabase;
+window.saveToLocalDB = saveToLocalDB;
+window.logout = logout;
