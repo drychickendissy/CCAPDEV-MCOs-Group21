@@ -9,6 +9,31 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    // Check if user is logged in, lock entire profile if not
+    var isLoggedIn = (localStorage.getItem("currentUserId") || "").trim().length > 0;
+    if (!isLoggedIn) {
+        var contentBox = document.querySelector(".content-box");
+        if (contentBox) {
+            contentBox.classList.add("locked");
+        }
+    }
+
+    function escapeHtml(str) {
+        return String(str == null ? "" : str)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+    function prettyCategory(cat) {
+        const c = String(cat || "").toLowerCase();
+        if (c === "news") return "News";
+        if (c === "help") return "Help";
+        return "Discussion";
+    }
+
     function getDatabase() {
         var localDb = parseJson(localStorage.getItem("mockDatabase"));
         return typeof mockDatabase !== "undefined" ? mockDatabase : localDb;
@@ -130,4 +155,44 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     renderTags(tagsView);
+
+    // Comment submission
+    const submitBtn = document.getElementById("submit-comment-btn");
+    if (submitBtn) {
+        submitBtn.onclick = function() {
+            const modal = document.getElementById("post-view-modal");
+            const postId = modal.getAttribute("data-post-id");
+            const commentText = document.getElementById("comment-input").value.trim();
+            const currentUserId = (localStorage.getItem("currentUserId") || "").trim();
+            
+            if (!currentUserId) {
+                AlertModal.show("Please login to add comments.", "error");
+                return;
+            }
+            
+            if (!commentText) {
+                AlertModal.show("Comment cannot be empty.", "error");
+                return;
+            }
+            
+            const post = PostsComponent_Instance.getPostById(postId);
+            if (!post) return;
+            
+            // Add comment to post
+            post.comments = post.comments || [];
+            post.comments.push({
+                userId: currentUserId,
+                text: commentText,
+                date: new Date().toLocaleDateString()
+            });
+            
+            // Save to localStorage
+            localStorage.setItem('mockDatabase', JSON.stringify(PostsComponent_Instance.getDatabase()));
+            
+            // Clear input and re-render
+            document.getElementById("comment-input").value = "";
+            renderComments(post);
+            AlertModal.show("Comment posted!", "success");
+        };
+    }
 });

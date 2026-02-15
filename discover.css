@@ -51,6 +51,7 @@ body {
 .search-wrapper {
     display: flex;
     align-items: center;
+    font-family: "Poppins", sans-serif;
 }
 
 #searchInput {
@@ -237,14 +238,4 @@ body {
 .article {
     position: relative;
     padding-bottom: 60px; 
-}
-
-.single-post-card {
-    position: relative; /* IMPORTANT */
-}
-
-.single-tag {
-    position: absolute;
-    top: 20px;
-    right: 20px;
 }
