@@ -238,3 +238,13 @@ body {
     position: relative;
     padding-bottom: 60px; 
 }
+
+.single-post-card {
+    position: relative; /* IMPORTANT */
+}
+
+.single-tag {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+}

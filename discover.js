@@ -148,6 +148,9 @@ function openPostView(postId) {
 
     if (!post.comments) post.comments = [];
 
+    const author = db.users.find(u => u.id === post.authorId);
+    const authorName = author ? author.username : "Unknown User";
+
     const grid = document.getElementById("discoverPosts");
     const singleView = document.getElementById("singlePostView");
 
@@ -156,13 +159,23 @@ function openPostView(postId) {
 
     singleView.innerHTML = `
         <div class="single-post-card">
+            <span class="post-tag single-tag">${post.category}</span>
             <button class="back-btn" onclick="closePostView()">← Back</button>
 
             <h2 class="single-post-title">${post.title}</h2>
+            <div class="byline poppins-regular">
+                By <b>${authorName}</b> • ${post.date}
+            </div>
             <p class="single-post-content">${post.content}</p>
+            <div class="article-actions">
+                <span class="chip poppins-regular">
+                    Score: <b>${(post.upvotes || 0) - (post.downvotes || 0)}</b>
+                </span>
 
-            <div class="tags">
-                <span class="post-tag">${post.category}</span>
+                <div class="vote">
+                    <button type="button" data-action="up-single" data-id="${post.id}">▲</button>
+                    <button type="button" data-action="down-single" data-id="${post.id}">▼</button>
+                </div>
             </div>
 
 
@@ -187,7 +200,7 @@ function openPostView(postId) {
 function closePostView() {
     document.getElementById("singlePostView").style.display = "none";
     document.getElementById("discoverPosts").style.display = "grid";
-    filterPosts();
+    renderDiscoverPosts();
 }
 
 
@@ -230,6 +243,14 @@ function setDiscoverDate() {
 }
 
 function buildNewspaperArticle(post, index, locked) {
+    let db = mockDatabase;
+    const saved = localStorage.getItem("mockDatabase");
+    if (saved) db = JSON.parse(saved);
+
+    const author = db.users.find(u => u.id === post.authorId);
+    const authorName = author ? author.username : "Unknown User";
+
+
     function escapeHtml(str) {
         return String(str == null ? "" : str)
             .replaceAll("&", "&amp;")
@@ -267,7 +288,7 @@ function buildNewspaperArticle(post, index, locked) {
             '<span>' + (Number(post.views) || 0) + ' views</span>' +
         '</div>' +
         '<h2 class="headline poppins-extrabold">' + escapeHtml(post.title) + '</h2>' +
-        '<div class="byline poppins-regular">By <b>' + escapeHtml(post.authorId) + '</b> • ' + escapeHtml(post.date) + '</div>' +
+        '<div class="byline poppins-regular">By <b>' + escapeHtml(authorName) + '</b> • ' + escapeHtml(post.date) + '</div>' +
         '<div class="rule"></div>' +
         '<p class="excerpt poppins-regular">' + escapeHtml(excerpt(post.content, 140)) + '</p>' +
         '<div class="article-actions">' +
@@ -334,4 +355,58 @@ document.getElementById("discoverPosts").onclick = function (e) {
 
     localStorage.setItem("mockDatabase", JSON.stringify(db));
     renderDiscoverPosts();
+};
+
+document.getElementById("singlePostView").onclick = function (e) {
+    const t = e.target;
+    if (!t) return;
+
+    const action = t.getAttribute("data-action");
+    const id = t.getAttribute("data-id");
+    if (!action || !id) return;
+
+    let db = mockDatabase;
+    const saved = localStorage.getItem("mockDatabase");
+    if (saved) db = JSON.parse(saved);
+
+    const post = db.posts.find(p => String(p.id) === String(id));
+    if (!post) return;
+
+    post.votes = post.votes || {};
+    post.upvotes = post.upvotes || 0;
+    post.downvotes = post.downvotes || 0;
+
+    const userId = (localStorage.getItem("currentUserId") || "").trim();
+    if (!userId) {
+        AlertModal.show("Please login to interact.", "error");
+        return;
+    }
+
+    const prev = post.votes[userId] || null;
+
+    function applyVote(next) {
+        if (prev === "up") post.upvotes--;
+        if (prev === "down") post.downvotes--;
+
+        if (next === "up") post.upvotes++;
+        if (next === "down") post.downvotes++;
+
+        if (next) post.votes[userId] = next;
+        else delete post.votes[userId];
+    }
+
+    if (action === "up-single") {
+        applyVote(prev === "up" ? null : "up");
+        AlertModal.show("Vote updated!", "success");
+    }
+
+    if (action === "down-single") {
+        applyVote(prev === "down" ? null : "down");
+        AlertModal.show("Vote updated!", "success");
+    }
+
+    localStorage.setItem("mockDatabase", JSON.stringify(db));
+
+    renderDiscoverPosts();   // 🔥 ADD THIS
+    openPostView(id);
 };
