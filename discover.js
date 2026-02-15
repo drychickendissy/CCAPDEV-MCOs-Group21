@@ -139,7 +139,20 @@ function filterPosts() {
 
 document.addEventListener("DOMContentLoaded", () => {
     renderDiscoverPosts();
+    setDiscoverDate();
 });
+
+function setDiscoverDate() {
+    const dateElement = document.getElementById("discoverDate");
+    if (!dateElement) return;
+
+    dateElement.textContent = new Date().toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+    });
+}
 
 function openPostView(postId) {
     let db = mockDatabase;
