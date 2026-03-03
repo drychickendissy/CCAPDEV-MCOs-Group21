@@ -299,6 +299,62 @@ body {
     transform: translateY(-1px);
 }
 
+@media (max-width: 900px) {
+    .discover-topbar {
+        padding: 0.9rem 1rem;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .discover-controls {
+        margin-bottom: 18px;
+        align-items: stretch;
+    }
+
+    .search-filter-wrapper {
+        width: 100%;
+    }
+
+    .search-filter-wrapper .search-wrapper,
+    .search-filter-wrapper search-bar,
+    .search-filter-wrapper search-bar .search-wrapper {
+        width: 100%;
+    }
+
+    .search-filter-wrapper .search-wrapper .search-input,
+    .search-wrapper .search-input,
+    #searchInput {
+        width: 100%;
+        max-width: none;
+        font-size: 14px;
+        padding: 12px 14px;
+    }
+
+    .filter-btn {
+        height: 44px;
+        padding: 0 12px;
+    }
+
+    .filter-panel {
+        width: min(320px, 90vw);
+    }
+}
+
+@media (max-width: 560px) {
+    .discover-title h1 {
+        font-size: 1.35rem;
+    }
+
+    .discover-topbar,
+    .single-post-card {
+        padding: 0.8rem;
+    }
+
+    .single-post-card {
+        margin: 20px auto;
+    }
+}
+
 .comment-actions button[data-action="c_up"],
 .comment-actions button[data-action="c_down"] {
     background: #5f764e;

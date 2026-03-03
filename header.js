@@ -22,10 +22,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var userDiv = document.createElement("div");
     userDiv.className = "header-user";
-    userDiv.innerHTML = '';
+    var isLoggedIn = (localStorage.getItem("currentUserId") || "").trim().length > 0;
+    userDiv.innerHTML =
+        '<span class="header-user-label poppins-regular">Session</span>' +
+        '<span class="header-status-pill poppins-regular" id="header-status-pill">' +
+            (isLoggedIn ? "Logged in" : "Guest mode") +
+        '</span>';
 
-    header.appendChild(userDiv);
     header.appendChild(contentDiv);
+    header.appendChild(userDiv);
 
     mainContent.insertBefore(header, mainContent.firstChild);
 });

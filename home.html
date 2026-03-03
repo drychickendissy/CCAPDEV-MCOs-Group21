@@ -35,10 +35,6 @@
             </div>
 
             <div class="masthead-right">
-              <a class="mini-link poppins-extrabold" id="profileLink" href="profile.html">Profile</a>
-              <a class="mini-link poppins-extrabold" href="popular.html">Popular</a>
-              <a class="mini-link poppins-extrabold" href="discover.html">Discover</a>
-              <span class="login-pill poppins-regular" id="loginStatus">—</span>
             </div>
           </div>
 
@@ -111,8 +107,6 @@
       var popularPreview = document.getElementById("popularPreview");
       var discoverPreview = document.getElementById("discoverPreview");
       var viewMoreGate = document.getElementById("viewMoreGate");
-      var loginStatus = document.getElementById("loginStatus");
-      var profileLink = document.getElementById("profileLink");
       var mastheadDate = document.getElementById("mastheadDate");
 
       function isLoggedIn() {
@@ -234,13 +228,6 @@
         var logged = isLoggedIn();
         var activeUserId = (localStorage.getItem("currentUserId") || "").trim();
 
-        if (loginStatus) loginStatus.textContent = logged ? "Logged in" : "Guest mode";
-
-        if (profileLink && !logged) {
-          profileLink.textContent = "Login";
-          profileLink.href = "login.html";
-        }
-
         // ✅ Latest posts: sort by date desc (most recent first)
         var latest = posts
           .slice()
@@ -249,8 +236,10 @@
           })
           .slice(0, 20);
 
-        // ✅ Guest sees only first 15 posts unblurred, others locked/blurred
-        var FREE_COUNT = 14;
+        // ✅ Guest sees first N posts based on shared PostsComponent setting
+        var FREE_COUNT = (typeof PostsComponent_Instance.getGuestFreePostCount === "function")
+          ? PostsComponent_Instance.getGuestFreePostCount()
+          : 15;
 
         if (paperGrid) {
           paperGrid.innerHTML = "";

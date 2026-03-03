@@ -104,11 +104,6 @@ class ProfilePosts extends HTMLElement {
             '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">' +
             '<h1 class="poppins-extrabold" style="color: #fdf8e2; margin: 0;">User Posts</h1>';
         
-        // Add create post button only if viewing own profile
-        if (isOwnProfile) {
-            postsHTML += '<button class="profile-create-btn poppins-extrabold" onclick="openCreatePostModal()">+ Create Post</button>';
-        }
-        
         postsHTML += '</div><div class="profile-posts" id="profile-posts-list">';
 
         if (userPosts.length === 0) {
@@ -155,47 +150,34 @@ class ProfilePosts extends HTMLElement {
 
     attachListeners() {
         const self = this;
-        const isLoggedIn = (localStorage.getItem("currentUserId") || "").trim().length > 0;
-        
-        // Vote button handlers
-        this.querySelectorAll('.vote button, [data-action="up"], [data-action="down"]').forEach(btn => {
-            btn.onclick = (e) => {
-                if (!isLoggedIn) {
-                    AlertModal.show("Please login or sign up to view and interact with posts.", "error");
-                    e.preventDefault();
-                    e.stopPropagation();
-                    return;
-                }
-                const action = btn.getAttribute('data-action');
-                const postId = btn.getAttribute('data-id');
-                if (typeof PostsComponent_Instance !== 'undefined') {
-                    PostsComponent_Instance.voteOnPost(postId, action);
-                    // Refresh the entire profile posts section to update vote counts
-                    self.render();
-                    self.attachListeners();
-                    // Update stats sidebar
-                    if (typeof window.updateProfileStats === 'function') {
-                        window.updateProfileStats();
-                    }
-                }
-            };
-        });
 
-        // Open and Comment button handlers
-        this.querySelectorAll('[data-action="open"], [data-action="comment"]').forEach(btn => {
-            btn.onclick = (e) => {
-                if (!isLoggedIn) {
-                    AlertModal.show("Please login or sign up to view and interact with posts.", "error");
-                    e.preventDefault();
-                    e.stopPropagation();
+        if (!this._postActionsBound) {
+            this.addEventListener('click', (e) => {
+                // Ignore menu/edit/delete clicks handled below
+                if (e.target.closest('.post-menu-container') || e.target.closest('.post-menu-item')) {
                     return;
                 }
-                const postId = btn.getAttribute('data-id');
-                if (typeof PostsComponent_Instance !== 'undefined' && typeof window.openPostModal !== 'undefined') {
-                    window.openPostModal(postId);
+
+                if (typeof PostsComponent_Instance === 'undefined') return;
+
+                const handled = PostsComponent_Instance.handlePostAction(e, {
+                    onVote: () => {
+                        self.render();
+                        self.attachListeners();
+                        if (typeof window.updateProfileStats === 'function') {
+                            window.updateProfileStats();
+                        }
+                    }
+                });
+
+                if (handled) {
+                    e.preventDefault();
+                    e.stopPropagation();
                 }
-            };
-        });
+            });
+
+            this._postActionsBound = true;
+        }
         
         // Menu button handlers
         this.querySelectorAll('.post-menu-btn').forEach(btn => {
@@ -307,14 +289,17 @@ class ProfilePosts extends HTMLElement {
         });
         
         // Close dropdown when clicking outside
-        document.addEventListener('click', (e) => {
-            const menus = this.querySelectorAll('.post-menu-dropdown');
-            menus.forEach(menu => {
-                if (!menu.parentElement.contains(e.target)) {
-                    menu.style.display = 'none';
-                }
+        if (!this._outsideClickBound) {
+            document.addEventListener('click', (e) => {
+                const menus = this.querySelectorAll('.post-menu-dropdown');
+                menus.forEach(menu => {
+                    if (!menu.parentElement.contains(e.target)) {
+                        menu.style.display = 'none';
+                    }
+                });
             });
-        });
+            this._outsideClickBound = true;
+        }
     }
 }
 

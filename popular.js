@@ -3,22 +3,6 @@ let timeFrame = 'today';
 
 function parsePostDate(dateStr) { return new Date(dateStr); }
 
-function escapeHtml(str) {
-    return String(str == null ? "" : str)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-}
-
-function prettyCategory(cat) {
-    const c = String(cat || "").toLowerCase();
-    if (c === "news") return "News";
-    if (c === "help") return "Help";
-    return "Discussion";
-}
-
 // Logic to check timeframe for "Top" sorting
 function isPostInTimeframe(post, timeframe) {
     const postDate = parsePostDate(post.date);
@@ -62,67 +46,15 @@ function renderPopularPosts() {
     postsContainer.innerHTML = '';
     const sortedPosts = getSortedPosts();
     const isLoggedIn = (localStorage.getItem("currentUserId") || "").trim().length > 0;
-    const FREE_COUNT = 14; // 0-14 = 15 free posts
+    const FREE_COUNT = typeof PostsComponent_Instance.getGuestFreePostCount === 'function'
+        ? PostsComponent_Instance.getGuestFreePostCount()
+        : 15;
     
     sortedPosts.forEach((post, index) => {
         const locked = !isLoggedIn && index >= FREE_COUNT;
         const article = PostsComponent_Instance.buildNewspaperArticle(post, index, locked, sortMode);
         postsContainer.appendChild(article);
     });
-
-    attachPostListeners();
-}
-
-function attachPostListeners() {
-    // Vote Buttons
-    document.querySelectorAll('.v-btn').forEach(btn => {
-        btn.onclick = () => voteOnPost(btn.dataset.id, parseInt(btn.dataset.dir));
-    });
-
-    // Vote Buttons from shared component
-    document.querySelectorAll('[data-action="up"], [data-action="down"]').forEach(btn => {
-        if (btn.classList.contains('v-btn')) return; // Skip if already handled
-        const action = btn.getAttribute('data-action');
-        const postId = btn.getAttribute('data-id');
-        if (action && postId) {
-            btn.onclick = () => {
-                PostsComponent_Instance.voteOnPost(postId, action);
-                renderPopularPosts();
-            };
-        }
-    });
-
-    // Open and Comment Buttons 
-    document.querySelectorAll('[data-action="open"], [data-action="comment"]').forEach(btn => {
-        const postId = btn.getAttribute('data-id');
-        if (postId) {
-            btn.onclick = () => {
-                const isLoggedIn = (localStorage.getItem("currentUserId") || "").trim().length > 0;
-                const post = PostsComponent_Instance.getPostById(postId);
-                const isLocked = post && post.locked;
-                
-                if (!isLoggedIn || isLocked) {
-                    AlertModal.show("Please login or sign up to view and interact with posts.", "error");
-                    return;
-                }
-                
-                window.openPostModal(postId);
-            };
-        }
-    });
-}
-
-function voteOnPost(postId, direction) {
-    if (!localStorage.getItem("currentUserId")) {
-        AlertModal.show("Please login to interact.", "error");
-        return;
-    }
-
-    const directionMap = { 1: "up", "-1": "down" };
-    const dir = String(direction);
-    
-    PostsComponent_Instance.voteOnPost(postId, directionMap[dir] || (direction > 0 ? "up" : "down"));
-    renderPopularPosts();
 }
 
 // Custom Select initialization logic
@@ -159,6 +91,15 @@ function initCustomSelects() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const postsContainer = document.querySelector('.paper-grid');
+    if (postsContainer) {
+        postsContainer.onclick = (e) => {
+            PostsComponent_Instance.handlePostAction(e, {
+                onVote: () => renderPopularPosts()
+            });
+        };
+    }
+
     initCustomSelects();
     renderPopularPosts();
 });

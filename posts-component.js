@@ -20,6 +20,8 @@
 */
 
 (function () {
+  const GUEST_FREE_POST_COUNT = 15;
+
   // -------------------------
   // Utilities
   // -------------------------
@@ -227,6 +229,265 @@
       post.lastInteraction = nowTs();
       this.persistDatabase();
       return true;
+    }
+
+    createPost(authorId, title, content, category) {
+      var cat = String(category || "").trim().toLowerCase();
+      if (!["discussion", "news", "help"].includes(cat)) cat = "discussion";
+
+      var post = {
+        id: "p" + Date.now(),
+        authorId: authorId,
+        category: cat,
+        title: String(title || "").trim(),
+        content: String(content || "").trim(),
+        date: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }),
+        upvotes: 0,
+        downvotes: 0,
+        views: 0,
+        votes: {},
+        comments: [],
+        lastInteraction: nowTs()
+      };
+
+      this.db.posts.unshift(post);
+      this.persistDatabase();
+      return post;
+    }
+
+    isLoggedIn() {
+      return getCurrentUserId().length > 0;
+    }
+
+    getGuestFreePostCount() {
+      return GUEST_FREE_POST_COUNT;
+    }
+
+    updateArticleVoteUI(articleEl, postId) {
+      if (!articleEl) return;
+
+      var post = this.getPostById(postId);
+      if (!post) return;
+
+      var voteCounts = articleEl.querySelector(".section-row span");
+      if (voteCounts) {
+        voteCounts.innerHTML =
+          (Number(post.views) || 0) +
+          " Views &#8226; ▲ " +
+          (Number(post.upvotes) || 0) +
+          " ▼ " +
+          (Number(post.downvotes) || 0);
+      }
+
+      var currentUserId = getCurrentUserId();
+      var userVote = (post.votes && currentUserId && post.votes[currentUserId]) ? post.votes[currentUserId] : null;
+      var upBtn = articleEl.querySelector('[data-action="up"]');
+      var downBtn = articleEl.querySelector('[data-action="down"]');
+
+      if (upBtn) upBtn.setAttribute("data-active", userVote === "up" ? "1" : "0");
+      if (downBtn) downBtn.setAttribute("data-active", userVote === "down" ? "1" : "0");
+    }
+
+    handlePostAction(event, options) {
+      options = options || {};
+
+      var target = event.target ? event.target.closest("[data-action][data-id]") : null;
+      if (!target) return false;
+
+      var action = target.getAttribute("data-action");
+      var postId = target.getAttribute("data-id");
+      if (!action || !postId) return false;
+
+      if (!["up", "down", "open", "comment"].includes(action)) {
+        return false;
+      }
+
+      var article = target.closest(".article");
+      var isLocked = article && article.getAttribute("data-locked") === "1";
+
+      if (!this.isLoggedIn() || isLocked) {
+        AlertModal.show("Please login or sign up to view and interact with posts.", "error");
+        event.preventDefault();
+        event.stopPropagation();
+        return true;
+      }
+
+      if (action === "up" || action === "down") {
+        this.voteOnPost(postId, action);
+
+        if (typeof options.onVote === "function") {
+          options.onVote(postId, action, article);
+        } else {
+          this.updateArticleVoteUI(article, postId);
+        }
+
+        return true;
+      }
+
+      if (typeof window.openPostModal === "function") {
+        window.openPostModal(postId);
+      }
+      return true;
+    }
+
+    ensureGlobalCreatePostUI() {
+      if (document.getElementById("global-create-post-fab")) {
+        this.syncGlobalCreatePostColor();
+        return;
+      }
+
+      var fab = document.createElement("button");
+      fab.id = "global-create-post-fab";
+      fab.className = "global-create-post-fab poppins-extrabold";
+      fab.type = "button";
+      fab.setAttribute("data-label", "Add Post");
+      fab.setAttribute("aria-label", "Create post");
+      fab.textContent = "+";
+      document.body.appendChild(fab);
+
+      if (!document.getElementById("global-create-post-modal")) {
+        var modal = document.createElement("div");
+        modal.id = "global-create-post-modal";
+        modal.className = "global-create-post-modal";
+        modal.style.display = "none";
+        modal.innerHTML =
+          '<div class="global-create-post-backdrop">' +
+            '<div class="global-create-post-card">' +
+              '<button class="global-create-close" id="global-create-close" type="button">&times;</button>' +
+              '<h2 class="poppins-extrabold">Create New Post</h2>' +
+              '<input type="text" id="global-create-title" class="global-create-input" placeholder="Post Title" />' +
+              '<textarea id="global-create-content" class="global-create-textarea" rows="6" placeholder="Write your post here..."></textarea>' +
+              '<select id="global-create-category" class="global-create-input">' +
+                '<option value="">Select Category</option>' +
+                '<option value="discussion">Discussion</option>' +
+                '<option value="news">News</option>' +
+                '<option value="help">Help</option>' +
+              '</select>' +
+              '<button id="global-create-submit" class="global-create-submit poppins-extrabold" type="button">Publish Post</button>' +
+            '</div>' +
+          '</div>';
+
+        document.body.appendChild(modal);
+      }
+
+      if (this._globalCreateUIBound) return;
+
+      var self = this;
+      var modalEl = document.getElementById("global-create-post-modal");
+      var closeBtn = document.getElementById("global-create-close");
+      var submitBtn = document.getElementById("global-create-submit");
+
+      fab.addEventListener("click", function () {
+        self.openGlobalCreatePostModal();
+      });
+
+      if (closeBtn) {
+        closeBtn.addEventListener("click", function () {
+          self.closeGlobalCreatePostModal();
+        });
+      }
+
+      if (submitBtn) {
+        submitBtn.addEventListener("click", function () {
+          self.submitGlobalCreatePost();
+        });
+      }
+
+      if (modalEl) {
+        modalEl.addEventListener("click", function (e) {
+          if (e.target === modalEl || e.target.classList.contains("global-create-post-backdrop")) {
+            self.closeGlobalCreatePostModal();
+          }
+        });
+      }
+
+      this.syncGlobalCreatePostColor();
+
+      this._globalCreateUIBound = true;
+    }
+
+    syncGlobalCreatePostColor() {
+      var fab = document.getElementById("global-create-post-fab");
+      if (!fab) return;
+
+      var color = "";
+      var pageSection = document.querySelector(".page-section");
+      if (pageSection) {
+        color = getComputedStyle(pageSection).getPropertyValue("--page-color").trim();
+      }
+
+      if (!color) {
+        color = "#5f764e";
+      }
+
+      fab.style.setProperty("--fab-color", color);
+    }
+
+    openGlobalCreatePostModal() {
+      var currentUser = getCurrentUserId();
+      if (!currentUser) {
+        AlertModal.show("You must be logged in to create a post.", "error");
+        return;
+      }
+
+      var modal = document.getElementById("global-create-post-modal");
+      if (modal) modal.style.display = "flex";
+    }
+
+    closeGlobalCreatePostModal() {
+      var modal = document.getElementById("global-create-post-modal");
+      if (modal) modal.style.display = "none";
+    }
+
+    submitGlobalCreatePost() {
+      var title = document.getElementById("global-create-title");
+      var content = document.getElementById("global-create-content");
+      var category = document.getElementById("global-create-category");
+      if (!title || !content || !category) return;
+
+      var titleVal = title.value.trim();
+      var contentVal = content.value.trim();
+      var categoryVal = category.value.trim();
+      var currentUserId = getCurrentUserId();
+
+      if (!currentUserId) {
+        AlertModal.show("You must be logged in to create a post.", "error");
+        return;
+      }
+
+      if (!titleVal) {
+        AlertModal.show("Please enter a post title", "error");
+        return;
+      }
+
+      if (!contentVal) {
+        AlertModal.show("Please enter post content", "error");
+        return;
+      }
+
+      if (!categoryVal) {
+        AlertModal.show("Please select a category", "error");
+        return;
+      }
+
+      this.createPost(currentUserId, titleVal, contentVal, categoryVal);
+
+      title.value = "";
+      content.value = "";
+      category.value = "";
+      this.closeGlobalCreatePostModal();
+
+      AlertModal.show("Post created successfully!", "success");
+
+      if (typeof window.triggerPostsUpdate === "function") {
+        window.triggerPostsUpdate();
+      } else {
+        window.location.reload();
+      }
+
+      if (typeof window.updateProfileStats === "function") {
+        window.updateProfileStats();
+      }
     }
 
     // -------------------------
@@ -814,6 +1075,33 @@
   // Global instance
   // -------------------------
   window.PostsComponent_Instance = new PostsComponent();
+
+  function initGlobalPostCreationUI() {
+    if (window.PostsComponent_Instance && typeof window.PostsComponent_Instance.ensureGlobalCreatePostUI === "function") {
+      window.PostsComponent_Instance.ensureGlobalCreatePostUI();
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initGlobalPostCreationUI);
+  } else {
+    initGlobalPostCreationUI();
+  }
+
+  window.openCreatePostModal = function () {
+    if (!window.PostsComponent_Instance) return;
+    window.PostsComponent_Instance.openGlobalCreatePostModal();
+  };
+
+  window.closeCreatePostModal = function () {
+    if (!window.PostsComponent_Instance) return;
+    window.PostsComponent_Instance.closeGlobalCreatePostModal();
+  };
+
+  window.submitNewPost = function () {
+    if (!window.PostsComponent_Instance) return;
+    window.PostsComponent_Instance.submitGlobalCreatePost();
+  };
 
   // -------------------------
   // Global Modal Functions (All Pages)

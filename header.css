@@ -20,8 +20,24 @@
 
 .header-user {
     display: flex;
-    align-items: center;
-    gap: 1rem;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+}
+
+.header-user-label {
+    color: #5f764e;
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+.header-status-pill {
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(95, 118, 78, 0.25);
+    background: rgba(95, 118, 78, 0.10);
+    color: #5f764e;
 }
 
 .logout-btn {
@@ -55,5 +71,48 @@
     font-family: "Poppins", sans-serif;
     font-size: 0.9rem;
     color: #fdf8e2;
+}
+
+@media (max-width: 900px) {
+    .header {
+        padding-bottom: 1.25rem;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .header-content h1 {
+        font-size: 1.3rem;
+        line-height: 1.1;
+        margin: 0;
+    }
+
+    .header-content img {
+        width: 72px;
+        height: 72px;
+    }
+}
+
+@media (max-width: 560px) {
+    .header {
+        padding: 0.75rem;
+    }
+
+    .header-content {
+        gap: 0.5rem;
+    }
+
+    .header-content h1 {
+        font-size: 1.05rem;
+    }
+
+    .header-user-label,
+    .header-status-pill {
+        font-size: 11px;
+    }
+
+    .header-status-pill {
+        padding: 5px 10px;
+    }
 }
 
