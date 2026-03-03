@@ -17,6 +17,7 @@ class Navbar extends HTMLElement {
 
   render() {
     const active = this.getAttribute('active') || 'home';
+    const isLoggedIn = (localStorage.getItem("currentUserId") || "").trim().length > 0;
     const tabs = {
       home: { color: "#a3b565", text: "#fdf8e2", icon: "home-icon.png", hoverIcon: "home-icon-hover.png" },
       profile: { color: "#504e76", text: "#fdf8e2", icon: "profile-icon.png", hoverIcon: "profile-icon-hover.png" },
@@ -34,8 +35,15 @@ class Navbar extends HTMLElement {
       ${this.tab("popular", "popular.html", tabs.popular.color, tabs.popular.text, tabs.popular.icon, tabs.popular.hoverIcon, active)}
       ${this.tab("discover", "discover.html", tabs.discover.color, tabs.discover.text, tabs.discover.icon, tabs.discover.hoverIcon, active)}
     </div>
+    <div class="navbar-auth">
+      ${isLoggedIn
+        ? '<button type="button" class="nav-auth-btn poppins-extrabold" data-auth-action="logout">Logout</button>'
+        : '<a href="login.html" class="nav-auth-btn poppins-extrabold" data-auth-action="login">Login</a>'
+      }
+    </div>
     `;
     this.attachIconHoverListeners();
+    this.attachAuthListeners();
   }
 
     tab(id, href, color, textColor, icon, hoverIcon, active) {
@@ -67,6 +75,22 @@ class Navbar extends HTMLElement {
       label.addEventListener('mouseleave', () => {
         img.src = normalIcon;
       });
+    });
+  }
+
+  attachAuthListeners() {
+    const logoutBtn = this.querySelector('[data-auth-action="logout"]');
+    if (!logoutBtn) return;
+
+    logoutBtn.addEventListener('click', () => {
+      if (typeof logout === 'function') {
+        logout();
+        return;
+      }
+
+      localStorage.removeItem("currentUserId");
+      localStorage.removeItem("rememberMeToken");
+      window.location.href = "login.html";
     });
   }
 };

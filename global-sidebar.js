@@ -6,14 +6,6 @@ document.addEventListener("DOMContentLoaded", function () {
         sidebar.innerHTML =
             '<div class="sidebar-brand">' +
             '<img src="assets/logo-b.png" alt="Animo Commons Logo" width="100" height="100">' +
-            "</div>" +
-            '<div class="sidebar-footer">' +
-            '<div class="logout-container">' +
-            '<button class="logout-btn" onclick="logout()" aria-label="Logout" title="Logout">' +
-            '<img src="assets/logout-icon.png" alt="Logout" width="60" height="60">' +
-            "</button>" +
-            '<span class="logout-text">Logout</span>' +
-            "</div>" +
             "</div>";
 
         var mainContent = document.querySelector(".main-content");

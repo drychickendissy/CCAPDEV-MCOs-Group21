@@ -514,6 +514,90 @@ body {
   }
 }
 
+@media (max-width: 768px) {
+  .home-masthead {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 14px;
+  }
+
+  .home-badge {
+    font-size: 28px;
+    letter-spacing: 0.06em;
+    line-height: 1.15;
+  }
+
+  .section-titlebar {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .paper-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .article {
+    padding: 12px;
+  }
+
+  .headline {
+    font-size: 16px;
+  }
+
+  .article.lead .headline {
+    font-size: 18px;
+  }
+
+  .article-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .comment-view-actions,
+  .vote {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .open-btn,
+  .comment-btn {
+    flex: 1 1 auto;
+    min-width: 120px;
+  }
+
+  .gate-actions {
+    flex-wrap: wrap;
+  }
+
+  .modal-container {
+    width: 95%;
+    max-height: 88vh;
+    padding: 16px;
+    margin-top: 30px;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-badge {
+    font-size: 23px;
+  }
+
+  .excerpt,
+  .comment-text,
+  .comment-textarea,
+  .submit-comment-btn {
+    font-size: 12px;
+  }
+
+  .modal-close-btn {
+    width: 40px;
+    height: 40px;
+    font-size: 28px;
+  }
+}
+
 /* POST VIEW MODAL */
 #post-view-modal {
   position: fixed !important;
