@@ -1,0 +1,27 @@
+{{!
+  ### `src/views/profile.hbs`
+  - Profile page composition.
+  - Assembles custom profile web components (`profile-topbar`, `profile-sidebar`, `profile-main`, `profile-posts`).
+  - Includes both edit and view post modal partials.
+
+  Profile page template
+  Displays the user's profile information, posts, and allows editing of profile details
+}}
+<div class="main-content">
+  <div class="container">
+    <nav-bar active="profile"></nav-bar>
+    <div class="page-section" style="--page-color: #504e76;">
+      <div class="content-box" style="--content-bg: #fdf8e2;">
+        <profile-topbar></profile-topbar>
+        <div class="profile-layout">
+          <profile-sidebar></profile-sidebar>
+          <profile-main></profile-main>
+        </div>
+        <profile-posts></profile-posts>
+      </div>
+    </div>
+  </div>
+
+  {{> edit-post-modal}}
+  {{> post-view-modal}}
+</div>

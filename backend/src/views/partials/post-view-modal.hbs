@@ -1,0 +1,28 @@
+{{!
+  ### `src/views/partials/post-view-modal.hbs`
+  - Reusable modal for viewing a post and its comment thread.
+  - Contains post content host, comment list, and comment submission UI.
+
+  Post View Modal partial template
+  Provides a modal dialog for viewing a post's content and its comments, as well as adding new comments
+}}
+<div id="post-view-modal" style="display: none;">
+  <div class="modal-backdrop">
+    <div class="modal-container">
+      <button class="modal-close-btn" onclick="closePostModal()">×</button>
+
+      <div id="modal-post-content"></div>
+
+      <div class="comments-section">
+        <h3 class="comments-title poppins-extrabold">Comments (<span id="comment-count">0</span>)</h3>
+
+        <div class="comments-list" id="comments-list"></div>
+
+        <div class="comment-input-area">
+          <textarea id="comment-input" placeholder="Add a comment..." rows="3" class="comment-textarea"></textarea>
+          <button id="submit-comment-btn" class="submit-comment-btn poppins-extrabold">Post Comment</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,34 @@
+{{!
+  ### `src/views/login.hbs`
+  - Login page form template.
+  - Collects username/password + remember-me state.
+  - Provides navigation to sign-up and guest-home entry.
+
+  Login page template
+  Provides a login form for users to access their accounts
+}}
+<div class="login-container">
+  <div class="login-side-banner">
+    <h2 class="poppins-extrabold">Welcome back Archer!</h2>
+    <p class="poppins-regular">Ready to discover and explore what the Commons is up to today?</p>
+  </div>
+  <div class="login-form-container">
+    <div class="login-form">
+      <div class="login-form-header">
+        <img src="assets/logo.png" alt="AnimoCommons Logo" width="200x" height="200px">
+      </div>
+      <h1 class="poppins-extrabold">Login</h1>
+      <form id="login-form">
+        <input type="text" id="username" placeholder="Username" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <button type="submit" class="poppins-regular">Login</button>
+        <div class="remember-me-container">
+          <input type="checkbox" id="remember-me" name="remember-me">
+          <label for="remember-me" class="poppins-regular">Remember Me</label>
+        </div>
+      </form>
+      <p class="poppins-regular">Don't have an account? <a href="/sign-up" class="poppins-regular">Sign up here</a></p>
+      <p class="poppins-regular"><a href="/home" class="poppins-regular">Continue as Guest</a></p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,116 @@
+{{!
+  ### `src/views/layouts/main.hbs`
+  - Global HTML shell for all pages.
+  - Defines shared `<head>` and `<body>` scaffolding.
+  - Conditionally includes CSS/JS bundles based on route flags (e.g., `includeHomeCss`, `includeIndexCss`, `includeHomeScript`, etc.).
+
+  This layout ensures consistent structure and resource loading across all pages, while allowing individual views to specify their unique dependencies.
+}}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{title}}</title>
+  <link rel="icon" href="assets/placeholder.png" type="image/png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+
+  {{#if includeAppStyles}}
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="layout.css">
+  <link rel="stylesheet" href="header.css">
+  <link rel="stylesheet" href="global-sidebar.css">
+  <link rel="stylesheet" href="navbar.css">
+  <link rel="stylesheet" href="alert.css">
+  {{/if}}
+  {{#if includeBaseStyleCss}}
+  <link rel="stylesheet" href="style.css">
+  {{/if}}
+
+  {{#if includeHomeCss}}
+  <link rel="stylesheet" href="home.css">
+  {{/if}}
+  {{#if includePopularCss}}
+  <link rel="stylesheet" href="popular.css">
+  {{/if}}
+  {{#if includeDiscoverCss}}
+  <link rel="stylesheet" href="discover.css">
+  {{/if}}
+  {{#if includeProfileCss}}
+  <link rel="stylesheet" href="profile.css">
+  {{/if}}
+  {{#if includeLoginCss}}
+  <link rel="stylesheet" href="login.css">
+  {{/if}}
+  {{#if includeSignUpCss}}
+  <link rel="stylesheet" href="sign-up.css">
+  {{/if}}
+  {{#if includeAlertCss}}
+  <link rel="stylesheet" href="alert.css">
+  {{/if}}
+  {{#if includeIndexCss}}
+  <link rel="stylesheet" href="index.css">
+  {{/if}}
+</head>
+<body>
+  {{{body}}}
+
+  {{#if includeAppScripts}}
+  <script src="data.js"></script>
+  <script src="posts-component.js"></script>
+  {{#if includeSearchScript}}
+  <script src="search-component.js"></script>
+  {{/if}}
+  {{#if includePopularScript}}
+  <script src="popular.js"></script>
+  {{/if}}
+  {{#if includeDiscoverScript}}
+  <script src="discover.js"></script>
+  {{/if}}
+  {{#if includeHomeScript}}
+  <script src="home.js"></script>
+  {{/if}}
+  <script src="alert.js"></script>
+  <script src="header.js"></script>
+  <script src="global-sidebar.js"></script>
+  <script src="navbar.js"></script>
+  {{/if}}
+
+  {{#if includeDataScript}}
+  <script src="data.js"></script>
+  {{/if}}
+  {{#if includePostsScript}}
+  <script src="posts-component.js"></script>
+  {{/if}}
+  {{#if includeAlertScript}}
+  <script src="alert.js"></script>
+  {{/if}}
+  {{#if includeHeaderScript}}
+  <script src="header.js"></script>
+  {{/if}}
+  {{#if includeGlobalSidebarScript}}
+  <script src="global-sidebar.js"></script>
+  {{/if}}
+  {{#if includeNavbarScript}}
+  <script src="navbar.js"></script>
+  {{/if}}
+  {{#if includeProfileScript}}
+  <script src="profile.js"></script>
+  {{/if}}
+  {{#if includeProfileComponentsScript}}
+  <script src="profile-components.js"></script>
+  {{/if}}
+  {{#if includeEditProfileScript}}
+  <script src="edit-profile.js"></script>
+  {{/if}}
+  {{#if includeLoginScript}}
+  <script src="login.js"></script>
+  {{/if}}
+  {{#if includeSignUpScript}}
+  <script src="sign-up.js"></script>
+  {{/if}}
+</body>
+</html>
