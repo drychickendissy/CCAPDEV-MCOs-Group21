@@ -1,0 +1,37 @@
+{{!
+  ### `src/views/index.hbs`
+  - Landing/index page used for rubric-friendly navigation.
+  - Presents route launch links to all primary views and API health.
+  - Uses external `index.css` via `includeIndexCss` route flag.
+
+  Index page template
+  Provides a simple landing page with links to all major views and API health check
+}}
+<div class="wrap">
+  <section class="hero">
+    <h1>Animo Commons</h1>
+    <p>MCO2 launch page rendered with Handlebars. Use the links below to access every major view.</p>
+  </section>
+
+  <section class="grid">
+    <div class="panel">
+      <h2>Main Views</h2>
+      <div class="link-list">
+        <a href="/home">Home</a>
+        <a href="/popular">Popular</a>
+        <a href="/discover">Discover</a>
+        <a href="/profile">Profile</a>
+        <a href="/edit-profile">Edit Profile</a>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Account + System</h2>
+      <div class="link-list">
+        <a href="/login">Login</a>
+        <a href="/sign-up">Sign Up</a>
+        <a href="/api/health">API Health</a>
+      </div>
+    </div>
+  </section>
+</div>

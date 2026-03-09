@@ -1,0 +1,38 @@
+{{!
+    ### `src/views/partials/edit-post-modal.hbs`
+  - Reusable modal for editing post title/content.
+  - Used by profile and any page that supports post editing interactions.
+
+  Edit Post Modal partial template
+  Provides a modal dialog for editing an existing post with title and content fields
+}}
+<div id="edit-post-modal" style="display: none;">
+  <div class="modal-backdrop">
+    <div class="modal-container">
+      <button class="modal-close-btn" onclick="closeEditPostModal()">×</button>
+
+      <h2 class="poppins-extrabold">Edit Post</h2>
+
+      <input
+        type="text"
+        id="edit-post-title"
+        placeholder="Post Title"
+        class="modal-input"
+      />
+
+      <textarea
+        id="edit-post-content"
+        placeholder="Post Content"
+        rows="6"
+        class="modal-textarea"
+      ></textarea>
+
+      <button
+        id="modal-save-btn"
+        class="submit-comment-btn poppins-extrabold"
+      >
+        Save Changes
+      </button>
+    </div>
+  </div>
+</div>

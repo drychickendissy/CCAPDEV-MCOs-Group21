@@ -1,0 +1,62 @@
+{{!
+  ### `src/views/popular.hbs`
+  - Popular posts page structure.
+  - Contains popular page top bar and sort controls (`Hot`/`Top`) with posts grid container.
+  - Includes post modal partial.
+
+  Popular page template
+  Displays a list of popular posts with sorting and filtering options
+}}
+<div class="main-content">
+  <header-component></header-component>
+  <global-sidebar></global-sidebar>
+  <div class="container">
+    <nav-bar active="popular"></nav-bar>
+    <div class="page-section" style="--page-color: #f1642e;">
+      <div class="content-box" style="--content-bg: #fdf8e2;">
+        <div class="popular-content">
+          <div class="popular-topbar">
+            <div class="popular-title">
+              <img src="assets/popular-icon.png" alt="popular" width="20" height="20">
+              <div class="title-group">
+                <h1 class="poppins-extrabold">Popular Posts</h1>
+                <div id="popularDate" class="masthead-sub poppins-regular">—</div>
+              </div>
+            </div>
+
+            <div class="popular-controls">
+              <div class="custom-select" id="sortSelect">
+                <div class="select-trigger">
+                  <span class="trigger-text">Hot</span>
+                  <div class="arrow"></div>
+                </div>
+                <div class="options-list">
+                  <div class="option selected" data-value="hot">Hot</div>
+                  <div class="option" data-value="top">Top</div>
+                </div>
+              </div>
+
+              <div class="custom-select" id="timeSelect" style="display: none;">
+                <div class="select-trigger">
+                  <span class="trigger-text">Today</span>
+                  <div class="arrow"></div>
+                </div>
+                <div class="options-list">
+                  <div class="option selected" data-value="today">Today</div>
+                  <div class="option" data-value="week">This Week</div>
+                  <div class="option" data-value="month">This Month</div>
+                  <div class="option" data-value="year">This Year</div>
+                  <div class="option" data-value="alltime">All Time</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="paper-grid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{> post-view-modal}}

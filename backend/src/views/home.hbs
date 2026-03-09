@@ -1,0 +1,87 @@
+{{!
+  ### `src/views/home.hbs`
+  - Home feed page structure.
+  - Includes:
+    - header/sidebar/nav components
+    - latest posts grid + guest gate
+    - right-rail preview blocks for popular/discover
+    - post modal partial
+  - Runtime behavior is handled in external `public/home.js`.
+
+  Home page template
+  Displays the latest posts, popular posts, and discover posts
+}}
+<div class="main-content">
+  <header-component></header-component>
+  <global-sidebar></global-sidebar>
+
+  <div class="container">
+    <nav-bar active="home"></nav-bar>
+
+    <div class="page-section" style="--page-color: #a3b565;">
+      <div class="content-box" style="--content-bg: #fdf8e2;">
+
+        <div class="home-masthead">
+          <div class="masthead-left">
+            <div class="home-badge poppins-extrabold">ANIMO COMMONS DAILY</div>
+            <div class="masthead-sub poppins-regular" id="mastheadDate">—</div>
+          </div>
+
+          <div class="masthead-right">
+          </div>
+        </div>
+
+        <div class="home-grid">
+
+          <section class="paper-section">
+            <div class="section-titlebar">
+              <h2 class="poppins-extrabold">Latest Posts</h2>
+              <span class="hint poppins-regular">Animo Commons posts</span>
+            </div>
+
+            <div class="paper-grid" id="paperGrid"></div>
+
+            <div class="guest-gate" id="viewMoreGate" style="display:none;">
+              <p class="poppins-regular">
+                You’re in <b>Guest mode</b>. Login / Sign up to view posts and interact.
+              </p>
+              <div class="gate-actions">
+                <a class="gate-btn poppins-extrabold" href="/login">Login</a>
+                <a class="gate-btn outline poppins-extrabold" href="/sign-up">Sign Up</a>
+              </div>
+            </div>
+          </section>
+
+          <aside class="right-rail">
+            <section class="preview-block">
+              <div class="section-topbar" style="--section-bg:#f1642e;">
+                <div class="section-title">
+                  <img src="assets/popular-icon.png" alt="popular" width="20" height="20">
+                  <h3 class="poppins-extrabold">Popular</h3>
+                </div>
+                <a class="view-more poppins-extrabold" href="/popular">View More</a>
+              </div>
+
+              <div class="preview-list" id="popularPreview"></div>
+            </section>
+
+            <section class="preview-block">
+              <div class="section-topbar" style="--section-bg:#f1b02e;">
+                <div class="section-title">
+                  <img src="assets/discover-icon.png" alt="discover" width="20" height="20">
+                  <h3 class="poppins-extrabold">Discover Posts</h3>
+                </div>
+                <a class="view-more poppins-extrabold" href="/discover">View More</a>
+              </div>
+
+              <div class="posts-grid-mini" id="discoverPreview"></div>
+            </section>
+          </aside>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{> post-view-modal}}
