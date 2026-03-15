@@ -63,12 +63,55 @@
 
   function nowTs() { return Date.now(); }
 
+  function getHotTimestamp(post) {
+    if (!post) return 0;
+
+    var lastUpvotedAt = Number(post.lastUpvotedAt) || 0;
+    if (lastUpvotedAt > 0) return lastUpvotedAt;
+
+    var upvotes = Number(post.upvotes) || 0;
+    if (upvotes <= 0) return 0;
+
+    var legacyFallback = new Date(post.lastInteraction || post.createdAt || post.date || 0).getTime();
+    return Number.isNaN(legacyFallback) ? 0 : legacyFallback;
+  }
+
   function getCurrentUserId() {
     return (localStorage.getItem("currentUserId") || "").trim();
   }
 
+  function normalizeId(value) {
+    if (value == null) return "";
+    if (typeof value === "object") {
+      if (value.id != null) return String(value.id);
+      if (value._id != null) return String(value._id);
+      if (typeof value.toString === "function" && value.toString !== Object.prototype.toString) {
+        return String(value.toString());
+      }
+      return "";
+    }
+    return String(value);
+  }
+
   function makeId(prefix) {
     return prefix + "_" + nowTs() + "_" + Math.floor(Math.random() * 999999);
+  }
+
+  function closeOwnerActionMenus(root, except) {
+    var scope = root || document;
+    scope.querySelectorAll(".owner-action-dropdown").forEach(function (menu) {
+      if (menu !== except) {
+        menu.style.display = "none";
+      }
+    });
+  }
+
+  function toggleOwnerActionMenu(root, dropdown) {
+    if (!dropdown) return;
+
+    var isOpen = dropdown.style.display === "block";
+    closeOwnerActionMenus(root, dropdown);
+    dropdown.style.display = isOpen ? "none" : "block";
   }
 
   // -------------------------
@@ -94,6 +137,7 @@
         if (e && e.detail && e.detail.database) {
           this.db = e.detail.database;
           window.mockDatabase = this.db;
+          this.syncActiveCommentModal();
           if (typeof window.triggerPostsUpdate === "function") {
             window.triggerPostsUpdate();
           }
@@ -108,8 +152,19 @@
         if (latest && latest.users && latest.posts) {
           this.db = latest;
           window.mockDatabase = latest;
+          this.syncActiveCommentModal();
         }
       } catch (error) {}
+    }
+
+    syncActiveCommentModal() {
+      var modal = document.getElementById("post-view-modal");
+      if (!modal || modal.style.display === "none") return;
+
+      var postId = modal.getAttribute("data-post-id");
+      if (!postId || typeof this.renderCommentsInModal !== "function") return;
+
+      this.renderCommentsInModal(postId);
     }
 
     // ----- DB
@@ -189,6 +244,10 @@
         post.votes[uid] = newVote;
       }
 
+      if (newVote === "up") {
+        post.lastUpvotedAt = nowTs();
+      }
+
       post.lastInteraction = nowTs();
       this.persistDatabase();
 
@@ -212,15 +271,21 @@
       var uid = getCurrentUserId();
       if (!uid || String(post.authorId) !== String(uid)) return false;
 
-      post.title = String(newTitle || "").trim();
-      post.content = String(newContent || "").trim();
+      var title = String(newTitle || "").trim();
+      var content = String(newContent || "").trim();
+      var contentChanged = title !== post.title || content !== post.content;
+
+      post.title = title;
+      post.content = content;
       
-      var now = new Date();
-      post.lastEdited = now.toLocaleDateString("en-US", { 
-        month: "short", 
-        day: "numeric", 
-        year: "numeric" 
-      });
+      if (contentChanged) {
+        var now = new Date();
+        post.lastEdited = now.toLocaleDateString("en-US", { 
+          month: "short", 
+          day: "numeric", 
+          year: "numeric" 
+        });
+      }
       post.lastInteraction = nowTs();
 
       this.persistDatabase();
@@ -565,17 +630,15 @@
       if (authorId) posts = posts.filter(p => String(p.authorId || "") === authorId);
 
       if (sortBy === "hot") {
+        posts = posts.filter((post) => getHotTimestamp(post) > 0);
         posts.sort((a, b) => {
-          var sa = (Number(a.upvotes) || 0) - (Number(a.downvotes) || 0);
-          var sb = (Number(b.upvotes) || 0) - (Number(b.downvotes) || 0);
-          var va = Number(a.views) || 0;
-          var vb = Number(b.views) || 0;
-          var ia = Number(a.lastInteraction) || 0;
-          var ib = Number(b.lastInteraction) || 0;
+          var hotA = getHotTimestamp(a);
+          var hotB = getHotTimestamp(b);
+          if (hotB !== hotA) return hotB - hotA;
 
-          var hotA = sa * 4 + va * 0.02 + ia * 0.00000005;
-          var hotB = sb * 4 + vb * 0.02 + ib * 0.00000005;
-          return hotB - hotA;
+          var scoreA = (Number(a.upvotes) || 0) - (Number(a.downvotes) || 0);
+          var scoreB = (Number(b.upvotes) || 0) - (Number(b.downvotes) || 0);
+          return scoreB - scoreA;
         });
       } else if (sortBy === "top") {
         posts.sort((a, b) => {
@@ -685,7 +748,10 @@
 
         // Old format: { userId, text, date }
         if (!c.id) c.id = makeId("c");
+        c.id = normalizeId(c.id);
+        c.userId = normalizeId(c.userId);
         if (!("parentId" in c)) c.parentId = null;
+        else c.parentId = c.parentId == null ? null : normalizeId(c.parentId);
 
         if (!("createdAt" in c)) {
           // If they used `date` before, keep it but also add createdAt
@@ -860,6 +926,8 @@
       var cleaned = String(newText || "").trim();
       if (!cleaned) return false;
 
+      if (cleaned === c.text) return true;
+
       c.text = cleaned;
       c.editedAt = nowTs();
 
@@ -940,7 +1008,7 @@
 
         var renderNode = (node, depth) => {
           var wrapper = document.createElement("div");
-          wrapper.className = "comment-item";
+          wrapper.className = "comment-item comment-item-thread";
           wrapper.style.marginLeft = (depth * 18) + "px";
 
           var user = this.getUserById(node.userId) || { username: "Unknown", photo: "assets/placeholder.png" };
@@ -964,6 +1032,17 @@
           var myVote = (currentUserId && node.votes && node.votes[currentUserId]) ? node.votes[currentUserId] : null;
           var upActive = (myVote === "up") ? ' data-active="1"' : "";
           var downActive = (myVote === "down") ? ' data-active="1"' : "";
+          var ownerMenu = isOwner
+            ? (
+              '<div class="owner-action-menu owner-action-menu--comment">' +
+                '<button type="button" class="owner-action-trigger" data-action="c_menu_toggle" data-cid="' + escapeHtml(node.id) + '" aria-label="Comment actions">&#8942;</button>' +
+                '<div class="owner-action-dropdown" data-owner-menu="' + escapeHtml(node.id) + '" style="display:none;">' +
+                  '<button type="button" class="owner-action-item" data-action="c_edit_toggle" data-cid="' + escapeHtml(node.id) + '">Edit</button>' +
+                  '<button type="button" class="owner-action-item owner-action-item-delete" data-action="c_delete" data-cid="' + escapeHtml(node.id) + '">Delete</button>' +
+                '</div>' +
+              '</div>'
+            )
+            : "";
 
           // Check if this is a reply and get parent user info
           var replyToText = "";
@@ -976,6 +1055,7 @@
           }
 
           wrapper.innerHTML =
+            ownerMenu +
             '<div class="comment-header poppins-regular" style="display:flex; align-items:center; gap:10px;">' +
               '<img src="' + escapeHtml(user.photo || "assets/placeholder.png") + '" ' +
                    'alt="' + escapeHtml(user.username) + '" ' +
@@ -994,12 +1074,6 @@
               '<button type="button" data-action="c_down" data-cid="' + escapeHtml(node.id) + '"' + downActive + '>▼</button>' +
               '<span class="poppins-regular">' + downvotes + '</span>' +
               '<button type="button" class="poppins-regular" data-action="c_reply_toggle" data-cid="' + escapeHtml(node.id) + '">Reply</button>' +
-              (isOwner
-                ? (
-                  '<button type="button" class="poppins-regular" data-action="c_edit_toggle" data-cid="' + escapeHtml(node.id) + '">Edit</button>' +
-                  '<button type="button" class="poppins-regular" data-action="c_delete" data-cid="' + escapeHtml(node.id) + '">Delete</button>'
-                )
-                : "") +
             '</div>' +
 
             '<div data-replybox="' + escapeHtml(node.id) + '" style="display:none; margin-top:10px;">' +
@@ -1066,6 +1140,13 @@
         var postId = modal.getAttribute("data-post-id");
         var uid = getCurrentUserId();
 
+        if (action === "c_menu_toggle") {
+          e.stopPropagation();
+          var menu = commentsList.querySelector('[data-owner-menu="' + cid + '"]');
+          toggleOwnerActionMenu(commentsList, menu);
+          return;
+        }
+
         if (!uid) {
           AlertModal.show("Please login to interact with comments.", "error");
           return;
@@ -1084,6 +1165,7 @@
         }
 
         if (action === "c_reply_toggle") {
+          closeOwnerActionMenus(commentsList);
           var box = commentsList.querySelector('[data-replybox="' + cid + '"]');
           if (box) box.style.display = (box.style.display === "none" ? "block" : "none");
           return;
@@ -1112,6 +1194,7 @@
         }
 
         if (action === "c_edit_toggle") {
+          closeOwnerActionMenus(commentsList);
           var ebox = commentsList.querySelector('[data-editbox="' + cid + '"]');
           if (ebox) ebox.style.display = (ebox.style.display === "none" ? "block" : "none");
           return;
@@ -1145,25 +1228,41 @@
         }
 
         if (action === "c_delete") {
-          var sure = confirm("Delete this comment? Replies under it will also be deleted.");
-          if (!sure) return;
+          closeOwnerActionMenus(commentsList);
+          var runDelete = () => {
+            var ok4 = this.deleteComment(postId, cid, uid);
+            if (!ok4) {
+              AlertModal.show("You can only delete your own comment.", "error");
+              return;
+            }
 
-          var ok4 = this.deleteComment(postId, cid, uid);
-          if (!ok4) {
-            AlertModal.show("You can only delete your own comment.", "error");
-            return;
-          }
+            this.renderCommentsInModal(postId);
+            AlertModal.show("Comment deleted.", "success");
+            
+            // Trigger update of post list to refresh comment counts
+            if (typeof window.triggerPostsUpdate === "function") {
+              window.triggerPostsUpdate();
+            }
+          };
 
-          this.renderCommentsInModal(postId);
-          AlertModal.show("Comment deleted.", "success");
-          
-          // Trigger update of post list to refresh comment counts
-          if (typeof window.triggerPostsUpdate === "function") {
-            window.triggerPostsUpdate();
+          if (typeof AlertModal !== "undefined" && typeof AlertModal.confirm === "function") {
+            AlertModal.confirm("Delete this comment? Replies under it will also be deleted.", runDelete);
+          } else {
+            var sure = confirm("Delete this comment? Replies under it will also be deleted.");
+            if (sure) runDelete();
           }
           return;
         }
       });
+
+      if (!this._ownerMenuCloseBound) {
+        document.addEventListener("click", function (e) {
+          if (!e.target.closest(".owner-action-menu")) {
+            closeOwnerActionMenus(document);
+          }
+        });
+        this._ownerMenuCloseBound = true;
+      }
 
       this._commentSystemBound = true;
     }
@@ -1204,13 +1303,172 @@
   // -------------------------
   // Global Modal Functions (All Pages)
   // -------------------------
+  function renderPostModalContent(postId) {
+    var post = window.PostsComponent_Instance.getPostById(postId);
+    if (!post) return;
+
+    var modalContent = document.getElementById("modal-post-content");
+    if (!modalContent) return;
+
+    var user = window.PostsComponent_Instance.getUserById(post.authorId) || { username: "Unknown", photo: "assets/placeholder.png" };
+    var currentUserId = getCurrentUserId();
+    var isOwner = currentUserId && String(currentUserId) === String(post.authorId);
+
+    modalContent.innerHTML =
+      '<div class="post-modal-shell">' +
+        (isOwner
+          ? (
+            '<div class="owner-action-menu owner-action-menu--post">' +
+              '<button type="button" class="owner-action-trigger" data-post-action="menu_toggle" aria-label="Post actions">&#8942;</button>' +
+              '<div class="owner-action-dropdown" data-post-menu style="display:none;">' +
+                '<button type="button" class="owner-action-item" data-post-action="edit_toggle">Edit</button>' +
+                '<button type="button" class="owner-action-item owner-action-item-delete" data-post-action="delete">Delete</button>' +
+              '</div>' +
+            '</div>'
+          )
+          : "") +
+        '<div class="post-author-header poppins-regular">' +
+          '<img src="' + escapeHtml(user.photo) + '" alt="' + escapeHtml(user.username) + '" class="post-author-avatar">' +
+          '<div class="post-author-info">' +
+            '<span class="post-author-username poppins-extrabold">' + escapeHtml(user.username) + '</span>' +
+            '<span class="post-author-date">' +
+              escapeHtml(post.date || "") +
+              (post.lastEdited ? ' &#8226; Edited ' + escapeHtml(post.lastEdited) : "") +
+            '</span>' +
+          '</div>' +
+        '</div>' +
+        '<h2 class="headline poppins-extrabold">' + escapeHtml(post.title || "") + '</h2>' +
+        '<div class="section-row poppins-regular">' +
+          '<span>' + (Number(post.views) || 0) + ' Views &#8226; &#9650; ' +
+            (Number(post.upvotes) || 0) + ' &#9660; ' + (Number(post.downvotes) || 0) +
+          '</span>' +
+        '</div>' +
+        '<div class="rule"></div>' +
+        '<p class="excerpt poppins-regular">' + escapeHtml(post.content || "") + '</p>' +
+        '<div class="tags-mini"><span>' + prettyCategory(post.category) + '</span></div>' +
+        (isOwner
+          ? (
+            '<div data-post-edit-box style="display:none; margin-top:12px;">' +
+              '<input type="text" data-post-edit-title class="comment-textarea" style="min-height:auto; margin-bottom:8px;" value="' + escapeHtml(post.title || "") + '">' +
+              '<textarea data-post-edit-content class="comment-textarea" rows="5">' + escapeHtml(post.content || "") + '</textarea>' +
+              '<div style="display:flex; gap:8px; margin-top:8px;">' +
+                '<button type="button" class="submit-comment-btn poppins-extrabold" data-post-action="edit_save">Save Changes</button>' +
+                '<button type="button" class="submit-comment-btn poppins-extrabold" data-post-action="edit_cancel" style="background:#504e76;">Cancel</button>' +
+              '</div>' +
+            '</div>'
+          )
+          : "") +
+      '</div>';
+
+    if (!isOwner) return;
+
+    var editBox = modalContent.querySelector("[data-post-edit-box]");
+    var menuToggleBtn = modalContent.querySelector('[data-post-action="menu_toggle"]');
+    var menuDropdown = modalContent.querySelector("[data-post-menu]");
+    var editToggleBtn = modalContent.querySelector('[data-post-action="edit_toggle"]');
+    var editCancelBtn = modalContent.querySelector('[data-post-action="edit_cancel"]');
+    var editSaveBtn = modalContent.querySelector('[data-post-action="edit_save"]');
+    var deleteBtn = modalContent.querySelector('[data-post-action="delete"]');
+
+    if (menuToggleBtn && menuDropdown) {
+      menuToggleBtn.onclick = function (e) {
+        e.stopPropagation();
+        toggleOwnerActionMenu(modalContent, menuDropdown);
+      };
+    }
+
+    if (editToggleBtn && editBox) {
+      editToggleBtn.onclick = function () {
+        closeOwnerActionMenus(modalContent);
+        editBox.style.display = editBox.style.display === "none" ? "block" : "none";
+      };
+    }
+
+    if (editCancelBtn && editBox) {
+      editCancelBtn.onclick = function () {
+        editBox.style.display = "none";
+      };
+    }
+
+    if (deleteBtn) {
+      deleteBtn.onclick = function () {
+        closeOwnerActionMenus(modalContent);
+
+        var runDelete = function () {
+          var okDelete = window.PostsComponent_Instance.deletePost(postId);
+          if (!okDelete) {
+            AlertModal.show("You can only delete your own post.", "error");
+            return;
+          }
+
+          window.closePostModal();
+          if (typeof window.triggerPostsUpdate === "function") {
+            window.triggerPostsUpdate();
+          }
+          if (typeof window.updateProfileStats === "function") {
+            window.updateProfileStats();
+          }
+          AlertModal.show("Post deleted!", "success");
+        };
+
+        if (typeof AlertModal !== "undefined" && typeof AlertModal.confirm === "function") {
+          AlertModal.confirm("Delete this post? This action cannot be undone.", runDelete);
+        } else {
+          var sure = confirm("Delete this post? This action cannot be undone.");
+          if (sure) runDelete();
+        }
+      };
+    }
+
+    if (editSaveBtn) {
+      editSaveBtn.onclick = function () {
+        var nextTitleEl = modalContent.querySelector("[data-post-edit-title]");
+        var nextContentEl = modalContent.querySelector("[data-post-edit-content]");
+        var nextTitle = nextTitleEl ? String(nextTitleEl.value || "").trim() : "";
+        var nextContent = nextContentEl ? String(nextContentEl.value || "").trim() : "";
+
+        if (!nextTitle) {
+          AlertModal.show("Title cannot be empty", "error");
+          return;
+        }
+        if (!nextContent) {
+          AlertModal.show("Content cannot be empty", "error");
+          return;
+        }
+
+        var ok = window.PostsComponent_Instance.editPost(postId, nextTitle, nextContent);
+        if (!ok) {
+          AlertModal.show("You can only edit your own post.", "error");
+          return;
+        }
+
+        renderPostModalContent(postId);
+        if (typeof window.PostsComponent_Instance.renderCommentsInModal === "function") {
+          window.PostsComponent_Instance.renderCommentsInModal(postId);
+        }
+        if (typeof window.triggerPostsUpdate === "function") {
+          window.triggerPostsUpdate();
+        }
+        AlertModal.show("Post updated!", "success");
+      };
+    }
+  }
+
   window.openPostModal = function (postId) {
     var post = window.PostsComponent_Instance.getPostById(postId);
     if (!post) return;
 
     var modal = document.getElementById("post-view-modal");
-    var modalContent = document.getElementById("modal-post-content");
-    if (!modal || !modalContent) return;
+    if (!modal) return;
+
+    // Modal partial is mounted outside .page-section, so copy page color at open time.
+    var section = document.querySelector(".page-section");
+    if (section && typeof window.getComputedStyle === "function") {
+      var sectionPageColor = window.getComputedStyle(section).getPropertyValue("--page-color").trim();
+      if (sectionPageColor) {
+        modal.style.setProperty("--page-color", sectionPageColor);
+      }
+    }
 
     // Always count a view when opening full post
     window.PostsComponent_Instance.incrementViewCount(postId);
@@ -1219,28 +1477,7 @@
       window.triggerPostsUpdate();
     }
 
-    var user = window.PostsComponent_Instance.getUserById(post.authorId) || { username: "Unknown", photo: "assets/placeholder.png" };
-
-    modalContent.innerHTML =
-      '<div class="post-author-header poppins-regular">' +
-        '<img src="' + escapeHtml(user.photo) + '" alt="' + escapeHtml(user.username) + '" class="post-author-avatar">' +
-        '<div class="post-author-info">' +
-          '<span class="post-author-username poppins-extrabold">' + escapeHtml(user.username) + '</span>' +
-          '<span class="post-author-date">' +
-            escapeHtml(post.date || "") +
-            (post.lastEdited ? ' &#8226; Edited ' + escapeHtml(post.lastEdited) : "") +
-          '</span>' +
-        '</div>' +
-      '</div>' +
-      '<h2 class="headline poppins-extrabold">' + escapeHtml(post.title || "") + '</h2>' +
-      '<div class="section-row poppins-regular">' +
-        '<span>' + (Number(post.views) || 0) + ' Views &#8226; &#9650; ' +
-          (Number(post.upvotes) || 0) + ' &#9660; ' + (Number(post.downvotes) || 0) +
-        '</span>' +
-      '</div>' +
-      '<div class="rule"></div>' +
-      '<p class="excerpt poppins-regular">' + escapeHtml(post.content || "") + '</p>' +
-      '<div class="tags-mini"><span>' + prettyCategory(post.category) + '</span></div>';
+    renderPostModalContent(postId);
 
     modal.style.display = "flex";
     modal.setAttribute("data-post-id", postId);

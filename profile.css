@@ -251,6 +251,61 @@
     position: static;
 }
 
+.profile-edit-input {
+  font-size: 14px;
+  border: 2px solid #504e76;
+  padding: 8px 72px 8px 8px;
+  border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: #fdf8e2;
+  color: #504e76;
+  font-family: "Poppins", sans-serif;
+}
+
+.profile-security-section {
+  margin-top: 18px;
+  padding: 16px;
+  border: 2px solid #e6dfc5;
+  border-radius: 12px;
+  background: #fffaf0;
+}
+
+.profile-security-section h3 {
+  margin: 0 0 6px 0;
+  color: #504e76;
+}
+
+.profile-security-help {
+  margin: 0 0 12px 0;
+  color: #706d8f;
+  font-size: 13px;
+}
+
+.password-field--profile {
+  position: relative;
+  margin-top: 10px;
+}
+
+.password-field--profile .password-toggle-btn {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: #504e76;
+  cursor: pointer;
+  font-size: 13px;
+  min-width: auto;
+  padding: 0;
+}
+
+.password-field--profile .password-toggle-btn:hover {
+  background: transparent;
+  color: #625a8f;
+}
+
 .btn-reset-profile {
     background: #fdf8e2;
     color: #504e76;

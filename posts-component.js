@@ -72,6 +72,19 @@
     return (localStorage.getItem("currentUserId") || "").trim();
   }
 
+  function normalizeId(value) {
+    if (value == null) return "";
+    if (typeof value === "object") {
+      if (value.id != null) return String(value.id);
+      if (value._id != null) return String(value._id);
+      if (typeof value.toString === "function" && value.toString !== Object.prototype.toString) {
+        return String(value.toString());
+      }
+      return "";
+    }
+    return String(value);
+  }
+
   function makeId(prefix) {
     return prefix + "_" + nowTs() + "_" + Math.floor(Math.random() * 999999);
   }
@@ -189,15 +202,21 @@
       var uid = getCurrentUserId();
       if (!uid || String(post.authorId) !== String(uid)) return false;
 
-      post.title = String(newTitle || "").trim();
-      post.content = String(newContent || "").trim();
+      var title = String(newTitle || "").trim();
+      var content = String(newContent || "").trim();
+      var contentChanged = title !== post.title || content !== post.content;
+
+      post.title = title;
+      post.content = content;
       
-      var now = new Date();
-      post.lastEdited = now.toLocaleDateString("en-US", { 
-        month: "short", 
-        day: "numeric", 
-        year: "numeric" 
-      });
+      if (contentChanged) {
+        var now = new Date();
+        post.lastEdited = now.toLocaleDateString("en-US", { 
+          month: "short", 
+          day: "numeric", 
+          year: "numeric" 
+        });
+      }
       post.lastInteraction = nowTs();
 
       this.persistDatabase();
@@ -626,7 +645,10 @@
 
         // Old format: { userId, text, date }
         if (!c.id) c.id = makeId("c");
+        c.id = normalizeId(c.id);
+        c.userId = normalizeId(c.userId);
         if (!("parentId" in c)) c.parentId = null;
+        else c.parentId = c.parentId == null ? null : normalizeId(c.parentId);
 
         if (!("createdAt" in c)) {
           // If they used `date` before, keep it but also add createdAt
@@ -776,6 +798,8 @@
 
       var cleaned = String(newText || "").trim();
       if (!cleaned) return false;
+
+      if (cleaned === c.text) return true;
 
       c.text = cleaned;
       c.editedAt = nowTs();

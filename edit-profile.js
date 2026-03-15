@@ -94,6 +94,9 @@ document.addEventListener("DOMContentLoaded", function () {
   var pronounsInput = document.getElementById("edit-pronouns");
   var yearInput = document.getElementById("edit-year");
   var majorInput = document.getElementById("edit-major");
+  var currentPasswordInput = document.getElementById("edit-current-password");
+  var newPasswordInput = document.getElementById("edit-new-password");
+  var confirmPasswordInput = document.getElementById("edit-confirm-password");
 
   var avatarInput = document.getElementById("upload-profile-photo");
   var avatarPreview = document.getElementById("user-profile-photo");
@@ -101,6 +104,28 @@ document.addEventListener("DOMContentLoaded", function () {
   var tagsEdit = document.getElementById("edit-tags");
 
   if (!saveButton) return;
+
+  function initPasswordToggles() {
+    document.querySelectorAll("[data-toggle-password]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var inputId = button.getAttribute("data-toggle-password");
+        var input = inputId ? document.getElementById(inputId) : null;
+        if (!input) return;
+
+        var isHidden = input.type === "password";
+        input.type = isHidden ? "text" : "password";
+        button.textContent = isHidden ? "Hide" : "Show";
+      });
+    });
+  }
+
+  function clearPasswordInputs() {
+    if (currentPasswordInput) currentPasswordInput.value = "";
+    if (newPasswordInput) newPasswordInput.value = "";
+    if (confirmPasswordInput) confirmPasswordInput.value = "";
+  }
+
+  initPasswordToggles();
 
   // --- Load existing values into form ---
   if (nameInput) nameInput.value = user.username || "";
@@ -212,6 +237,7 @@ document.addEventListener("DOMContentLoaded", function () {
     renderEditableTags(tagsEdit);
 
     pendingAvatarDataUrl = "";
+    clearPasswordInputs();
     persistDatabase(db);
 
     if (typeof AlertModal !== "undefined") {
@@ -229,6 +255,41 @@ document.addEventListener("DOMContentLoaded", function () {
   saveButton.addEventListener("click", function () {
     var nextName = nameInput ? nameInput.value.trim() : "";
     var nextBio = bioInput ? bioInput.value.trim() : "";
+    var currentPassword = currentPasswordInput ? currentPasswordInput.value : "";
+    var newPassword = newPasswordInput ? newPasswordInput.value : "";
+    var confirmNewPassword = confirmPasswordInput ? confirmPasswordInput.value : "";
+    var wantsPasswordChange = Boolean(currentPassword || newPassword || confirmNewPassword);
+
+    if (wantsPasswordChange) {
+      if (!currentPassword) {
+        AlertModal.show("Please enter your current password.", "error");
+        return;
+      }
+
+      if (!user.password || user.password !== currentPassword) {
+        AlertModal.show("Current password is incorrect.", "error");
+        return;
+      }
+
+      if (!newPassword) {
+        AlertModal.show("Please enter a new password.", "error");
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        AlertModal.show("New password must be at least 6 characters.", "error");
+        return;
+      }
+
+      if (newPassword !== confirmNewPassword) {
+        AlertModal.show("New password confirmation does not match.", "error");
+        return;
+      }
+
+      user.password = newPassword;
+      localStorage.removeItem("rememberMeToken");
+      clearPasswordInputs();
+    }
 
     user.username = nextName;
     user.bio = nextBio;
@@ -244,7 +305,7 @@ document.addEventListener("DOMContentLoaded", function () {
     persistDatabase(db);
 
     if (typeof AlertModal !== "undefined") {
-      AlertModal.show("Profile saved!", "success");
+	  AlertModal.show(wantsPasswordChange ? "Profile and password saved!" : "Profile saved!", "success");
     }
 
     window.location.href = "profile.html";

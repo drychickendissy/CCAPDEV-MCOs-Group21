@@ -42,9 +42,11 @@ const postSchema = new mongoose.Schema(
     },
     title: { type: String, required: true, trim: true },
     content: { type: String, required: true, trim: true },
+    editedAt: { type: Date, default: null },
     upvotes: { type: Number, default: 0 },
     downvotes: { type: Number, default: 0 },
     views: { type: Number, default: 0 },
+    lastUpvotedAt: { type: Date, default: null },
     lastInteraction: { type: Date, default: Date.now },
     votes: {
       type: Map,

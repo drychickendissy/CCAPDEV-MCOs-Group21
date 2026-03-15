@@ -9,6 +9,19 @@
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   }
 
+  function normalizeId(value) {
+    if (value == null) return "";
+    if (typeof value === "object") {
+      if (value.id != null) return String(value.id);
+      if (value._id != null) return String(value._id);
+      if (typeof value.toString === "function" && value.toString !== Object.prototype.toString) {
+        return String(value.toString());
+      }
+      return "";
+    }
+    return String(value);
+  }
+
   function mapUser(user) {
     if (!user) return null;
     return {
@@ -27,29 +40,35 @@
   function mapPost(post) {
     if (!post) return null;
     var author = post.authorId && typeof post.authorId === "object" ? post.authorId : null;
+    var editedAt = post.editedAt || post.lastEdited || null;
+    var lastUpvotedAt = post.lastUpvotedAt || null;
+    if (!lastUpvotedAt && (Number(post.upvotes) || 0) > 0) {
+      lastUpvotedAt = post.lastInteraction || post.createdAt || post.date || null;
+    }
     return {
       id: post.id || post._id || "",
-      authorId: author ? (author.id || author._id || "") : String(post.authorId || ""),
+      authorId: author ? normalizeId(author) : normalizeId(post.authorId),
       category: post.category || "discussion",
       title: post.title || "",
       content: post.content || "",
       date: toDisplayDate(post.createdAt || post.date),
-      lastEdited: post.updatedAt && post.createdAt && String(post.updatedAt) !== String(post.createdAt) ? toDisplayDate(post.updatedAt) : "",
+      lastEdited: editedAt ? toDisplayDate(editedAt) : "",
       upvotes: Number(post.upvotes) || 0,
       downvotes: Number(post.downvotes) || 0,
       views: Number(post.views) || 0,
       votes: post.votes && typeof post.votes === "object" ? post.votes : {},
       comments: Array.isArray(post.comments) ? post.comments.map(function (comment) {
         return {
-          id: comment.id || comment._id || "",
-          userId: String(comment.userId || ""),
+          id: normalizeId(comment.id || comment._id),
+          userId: normalizeId(comment.userId),
           text: comment.text || "",
-          parentId: comment.parentId ? String(comment.parentId) : null,
+          parentId: comment.parentId ? normalizeId(comment.parentId) : null,
           createdAt: comment.createdAt || null,
           editedAt: comment.editedAt || null,
           votes: comment.votes && typeof comment.votes === "object" ? comment.votes : {}
         };
       }) : [],
+      lastUpvotedAt: lastUpvotedAt ? new Date(lastUpvotedAt).getTime() : null,
       lastInteraction: post.lastInteraction ? new Date(post.lastInteraction).getTime() : Date.now()
     };
   }

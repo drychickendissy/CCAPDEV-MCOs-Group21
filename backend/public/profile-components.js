@@ -127,12 +127,12 @@ class ProfilePosts extends HTMLElement {
                 // Add three-dot menu for edit/delete only if viewing own profile
                 if (isOwnProfile) {
                     const menuHTML = document.createElement('div');
-                    menuHTML.className = 'post-menu-container';
+                    menuHTML.className = 'owner-action-menu owner-action-menu--profile-post';
                     menuHTML.innerHTML = 
-                        '<button class="post-menu-btn" data-id="' + post.id + '">&#8942;</button>' +
-                        '<div class="post-menu-dropdown" data-id="' + post.id + '" style="display: none;">' +
-                            '<button class="post-menu-item post-edit-btn" data-id="' + post.id + '">Edit</button>' +
-                            '<button class="post-menu-item post-delete-btn" data-id="' + post.id + '">Delete</button>' +
+                        '<button class="owner-action-trigger" data-id="' + post.id + '" aria-label="Post actions">&#8942;</button>' +
+                        '<div class="owner-action-dropdown" data-id="' + post.id + '" style="display: none;">' +
+                            '<button class="owner-action-item post-edit-btn" data-id="' + post.id + '">Edit</button>' +
+                            '<button class="owner-action-item owner-action-item-delete post-delete-btn" data-id="' + post.id + '">Delete</button>' +
                         '</div>';
                     
                     // Insert menu into article at the top
@@ -154,7 +154,7 @@ class ProfilePosts extends HTMLElement {
         if (!this._postActionsBound) {
             this.addEventListener('click', (e) => {
                 // Ignore menu/edit/delete clicks handled below
-                if (e.target.closest('.post-menu-container') || e.target.closest('.post-menu-item')) {
+                if (e.target.closest('.owner-action-menu') || e.target.closest('.owner-action-item')) {
                     return;
                 }
 
@@ -180,14 +180,14 @@ class ProfilePosts extends HTMLElement {
         }
         
         // Menu button handlers
-        this.querySelectorAll('.post-menu-btn').forEach(btn => {
+        this.querySelectorAll('.owner-action-trigger[data-id]').forEach(btn => {
             btn.onclick = (e) => {
                 e.stopPropagation();
                 const postId = btn.getAttribute('data-id');
-                const dropdown = this.querySelector('.post-menu-dropdown[data-id="' + postId + '"]');
+                const dropdown = this.querySelector('.owner-action-dropdown[data-id="' + postId + '"]');
                 
                 // Close all other dropdowns
-                this.querySelectorAll('.post-menu-dropdown').forEach(dd => {
+                this.querySelectorAll('.owner-action-dropdown').forEach(dd => {
                     if (dd !== dropdown) {
                         dd.style.display = 'none';
                     }
@@ -291,7 +291,7 @@ class ProfilePosts extends HTMLElement {
         // Close dropdown when clicking outside
         if (!this._outsideClickBound) {
             document.addEventListener('click', (e) => {
-                const menus = this.querySelectorAll('.post-menu-dropdown');
+                const menus = this.querySelectorAll('.owner-action-dropdown');
                 menus.forEach(menu => {
                     if (!menu.parentElement.contains(e.target)) {
                         menu.style.display = 'none';

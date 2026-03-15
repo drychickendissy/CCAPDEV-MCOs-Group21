@@ -3,6 +3,37 @@ let timeFrame = 'today';
 
 function parsePostDate(dateStr) { return new Date(dateStr); }
 
+function getHotTimestamp(post) {
+    const explicit = Number(post && post.lastUpvotedAt) || 0;
+    if (explicit > 0) return explicit;
+
+    if ((Number(post && post.upvotes) || 0) <= 0) return 0;
+
+    const fallback = new Date(post.lastInteraction || post.date || 0).getTime();
+    return Number.isNaN(fallback) ? 0 : fallback;
+}
+
+function isTimestampInTimeframe(timestamp, timeframe) {
+    if (!timestamp) return false;
+
+    const point = new Date(timestamp);
+    if (Number.isNaN(point.getTime())) return false;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    point.setHours(0, 0, 0, 0);
+    const daysDiff = Math.floor((today - point) / (1000 * 60 * 60 * 24));
+
+    switch(timeframe) {
+        case 'today': return daysDiff === 0;
+        case 'week': return daysDiff >= 0 && daysDiff < 7;
+        case 'month': return daysDiff >= 0 && daysDiff < 30;
+        case 'year': return daysDiff >= 0 && daysDiff < 365;
+        case 'alltime': return true;
+        default: return true;
+    }
+}
+
 // Logic to check timeframe for "Top" sorting
 function isPostInTimeframe(post, timeframe) {
     const postDate = parsePostDate(post.date);
@@ -27,6 +58,8 @@ function getSortedPosts() {
     if (sortMode === 'top') {
         // Filter by timeframe and sort by highest score
         posts = posts.filter(post => isPostInTimeframe(post, timeFrame));
+    } else {
+        posts = posts.filter(post => isTimestampInTimeframe(getHotTimestamp(post), timeFrame));
     }
 
     return posts;
@@ -79,7 +112,6 @@ function initCustomSelects() {
 
                 if (select.id === 'sortSelect') {
                     sortMode = val;
-                    document.getElementById('timeSelect').style.display = (val === 'top') ? 'block' : 'none';
                 } else {
                     timeFrame = val;
                 }

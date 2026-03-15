@@ -77,6 +77,7 @@ export async function listPosts(req, res, next) {
     const withScore = posts.map((post) => ({
       ...mapPost(post),
       createdAt: post.createdAt,
+      lastUpvotedAt: post.lastUpvotedAt,
       lastInteraction: post.lastInteraction,
       views: post.views
     }));
@@ -160,9 +161,24 @@ export async function updatePost(req, res, next) {
       throw new HttpError(403, "You can only edit your own posts");
     }
 
-    if (title != null) post.title = String(title).trim();
-    if (content != null) post.content = String(content).trim();
-    if (category != null) post.category = assertValidCategory(category);
+    const nextTitle = title != null ? String(title).trim() : post.title;
+    const nextContent = content != null ? String(content).trim() : post.content;
+    const nextCategory = category != null ? assertValidCategory(category) : post.category;
+
+    const titleChanged = title != null && nextTitle !== post.title;
+    const contentChanged = content != null && nextContent !== post.content;
+    const categoryChanged = category != null && nextCategory !== post.category;
+
+    if (!titleChanged && !contentChanged && !categoryChanged) {
+      return res.json({ success: true, post: mapPost(post) });
+    }
+
+    if (titleChanged) post.title = nextTitle;
+    if (contentChanged) post.content = nextContent;
+    if (categoryChanged) post.category = nextCategory;
+    if (titleChanged || contentChanged) {
+      post.editedAt = new Date();
+    }
     post.lastInteraction = new Date();
 
     await post.save();
@@ -236,6 +252,10 @@ export async function votePost(req, res, next) {
 
     if (newVote) post.votes.set(key, newVote);
     else post.votes.delete(key);
+
+    if (newVote === "up") {
+      post.lastUpvotedAt = new Date();
+    }
 
     post.lastInteraction = new Date();
     await post.save();
@@ -328,7 +348,12 @@ export async function updateComment(req, res, next) {
       throw new HttpError(403, "You can only edit your own comments");
     }
 
-    comment.text = String(text).trim();
+    const nextText = String(text).trim();
+    if (nextText === comment.text) {
+      return res.json({ success: true, comment: { ...comment.toObject(), score: commentScore(comment) } });
+    }
+
+    comment.text = nextText;
     comment.editedAt = new Date();
     post.lastInteraction = new Date();
     await post.save();
