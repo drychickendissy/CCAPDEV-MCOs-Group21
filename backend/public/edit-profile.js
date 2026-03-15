@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-  // --- Helpers ---
+  // Helper functions for user authentication and database access (mocked or real)
   function isLoggedIn() {
     return (localStorage.getItem("currentUserId") || "").trim().length > 0;
   }
@@ -41,9 +41,8 @@ document.addEventListener("DOMContentLoaded", function () {
     return match ? match.value : rawValue;
   }
 
-  // --- Guard: must be logged in to edit profile ---
   if (!isLoggedIn()) {
-    // Optional: show alert if you want
+
     if (typeof AlertModal !== "undefined") {
       AlertModal.show("Please login to edit your profile.", "error");
     }
@@ -58,7 +57,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   var user = db.users.find(function (u) { return u && u.id === currentUserId; }) || {
     id: currentUserId,
-    username: "User",
+    username: "",
     bio: "",
     pronouns: "",
     year: "",
@@ -67,7 +66,6 @@ document.addEventListener("DOMContentLoaded", function () {
     tags: []
   };
 
-  // --- DOM refs ---
   var saveButton = document.getElementById("save-profile-edits");
   var resetButton = document.getElementById("reset-profile-to-default");
 
@@ -76,6 +74,9 @@ document.addEventListener("DOMContentLoaded", function () {
   var pronounsInput = document.getElementById("edit-pronouns");
   var yearInput = document.getElementById("edit-year");
   var majorInput = document.getElementById("edit-major");
+  var currentPasswordInput = document.getElementById("edit-current-password");
+  var newPasswordInput = document.getElementById("edit-new-password");
+  var confirmPasswordInput = document.getElementById("edit-confirm-password");
 
   var avatarInput = document.getElementById("upload-profile-photo");
   var avatarPreview = document.getElementById("user-profile-photo");
@@ -84,17 +85,30 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (!saveButton) return;
 
-  // --- Load existing values into form ---
-  if (nameInput) nameInput.value = user.username || "";
-  if (bioInput) bioInput.value = user.bio || "";
-  if (pronounsInput) setSelectValue(pronounsInput, user.pronouns || "");
-  if (yearInput) setSelectValue(yearInput, user.year || "");
-  if (majorInput) majorInput.value = user.major || "";
-  if (avatarPreview) avatarPreview.src = user.photo || "assets/placeholder.png";
+  function initPasswordToggles() {
+    document.querySelectorAll("[data-toggle-password]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        var inputId = button.getAttribute("data-toggle-password");
+        var input = inputId ? document.getElementById(inputId) : null;
+        if (!input) return;
 
-  // --- Tags editor ---
+        var isHidden = input.type === "password";
+        input.type = isHidden ? "text" : "password";
+        button.textContent = isHidden ? "Hide" : "Show";
+      });
+    });
+  }
+
+  function clearPasswordInputs() {
+    if (currentPasswordInput) currentPasswordInput.value = "";
+    if (newPasswordInput) newPasswordInput.value = "";
+    if (confirmPasswordInput) confirmPasswordInput.value = "";
+  }
+
+  initPasswordToggles();
+
   var defaultTags = ["CCS", "ID 124", "Friendly"];
-  var tags = Array.isArray(user.tags) && user.tags.length ? user.tags.slice() : defaultTags.slice();
+  var tags = Array.isArray(user.tags) ? user.tags.slice() : [];
 
   function renderEditableTags(container) {
     if (!container) return;
@@ -141,7 +155,56 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
+  function applyUserToForm() {
+    if (nameInput) nameInput.value = user.username || "";
+    if (bioInput) bioInput.value = user.bio || "";
+    if (pronounsInput) setSelectValue(pronounsInput, user.pronouns || "");
+    if (yearInput) setSelectValue(yearInput, user.year || "");
+    if (majorInput) majorInput.value = user.major || "";
+    if (avatarPreview) avatarPreview.src = user.photo || "assets/placeholder.png";
+    tags = Array.isArray(user.tags) ? user.tags.slice() : [];
+    renderEditableTags(tagsEdit);
+  }
+
+  async function loadCurrentUserData() {
+    var resolved = null;
+
+    if (typeof window.apiRequest === "function") {
+      try {
+        var mePayload = await window.apiRequest("/api/users/me", { method: "GET" });
+        if (mePayload && mePayload.user) {
+          resolved = mePayload.user;
+        }
+      } catch (error) {}
+    }
+
+    if (!resolved && typeof window.bootstrapMockDatabase === "function") {
+      try {
+        await window.bootstrapMockDatabase();
+      } catch (error) {}
+    }
+
+    if (!resolved) {
+      var latestDb = getDatabase();
+      var latestUsers = Array.isArray(latestDb.users) ? latestDb.users : [];
+      resolved = latestUsers.find(function (u) {
+        if (!u) return false;
+        var userId = String(u.id || u._id || "");
+        return userId && userId === currentUserId;
+      }) || null;
+    }
+
+    if (resolved) {
+      user = Object.assign({}, user, resolved, {
+        id: String(resolved.id || resolved._id || currentUserId || "")
+      });
+    }
+
+    applyUserToForm();
+  }
+
   renderEditableTags(tagsEdit);
+  loadCurrentUserData();
 
   if (tagsEdit) {
     tagsEdit.addEventListener("click", function (event) {
@@ -156,8 +219,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // --- Avatar upload ---
-  var pendingAvatarDataUrl = ""; // keep new uploaded avatar here
+  var pendingAvatarDataUrl = ""; 
   if (avatarInput && avatarPreview) {
     avatarInput.addEventListener("change", function () {
       var file = avatarInput.files && avatarInput.files[0];
@@ -172,7 +234,6 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // --- Reset ONLY this user's profile fields (do NOT delete mockDatabase) ---
   async function resetToDefaults() {
     user.username = "Username";
     user.bio = "Default bio";
@@ -194,6 +255,7 @@ document.addEventListener("DOMContentLoaded", function () {
     renderEditableTags(tagsEdit);
 
     pendingAvatarDataUrl = "";
+    clearPasswordInputs();
     try {
       // PATCH: reset current user profile fields to defaults
       await window.apiRequest("/api/users/me", {
@@ -223,10 +285,35 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 
-  // --- Save ---
   saveButton.addEventListener("click", async function () {
     var nextName = nameInput ? nameInput.value.trim() : "";
     var nextBio = bioInput ? bioInput.value.trim() : "";
+    var currentPassword = currentPasswordInput ? currentPasswordInput.value : "";
+    var newPassword = newPasswordInput ? newPasswordInput.value : "";
+    var confirmNewPassword = confirmPasswordInput ? confirmPasswordInput.value : "";
+    var wantsPasswordChange = Boolean(currentPassword || newPassword || confirmNewPassword);
+
+    if (wantsPasswordChange) {
+      if (!currentPassword) {
+        AlertModal.show("Please enter your current password.", "error");
+        return;
+      }
+
+      if (!newPassword) {
+        AlertModal.show("Please enter a new password.", "error");
+        return;
+      }
+
+      if (newPassword.length < 6) {
+        AlertModal.show("New password must be at least 6 characters.", "error");
+        return;
+      }
+
+      if (newPassword !== confirmNewPassword) {
+        AlertModal.show("New password confirmation does not match.", "error");
+        return;
+      }
+    }
 
     user.username = nextName;
     user.bio = nextBio;
@@ -250,7 +337,10 @@ document.addEventListener("DOMContentLoaded", function () {
           year: user.year,
           major: user.major,
           photo: user.photo,
-          tags: user.tags
+          tags: user.tags,
+          currentPassword: wantsPasswordChange ? currentPassword : undefined,
+          newPassword: wantsPasswordChange ? newPassword : undefined,
+          confirmNewPassword: wantsPasswordChange ? confirmNewPassword : undefined
         })
       });
 
@@ -265,8 +355,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     persistDatabase();
 
+    if (wantsPasswordChange) {
+      localStorage.removeItem("rememberMeToken");
+      clearPasswordInputs();
+    }
+
     if (typeof AlertModal !== "undefined") {
-      AlertModal.show("Profile saved!", "success");
+      AlertModal.show(wantsPasswordChange ? "Profile and password saved!" : "Profile saved!", "success");
     }
 
     window.location.href = "/profile";

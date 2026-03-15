@@ -22,7 +22,7 @@ export async function requireAuth(req, res, next) {
 
   try {
     const payload = jwt.verify(token, env.jwtSecret);
-    const user = await User.findById(payload.userId).select("-passwordHash");
+    const user = await User.findById(payload.userId);
 
     if (!user) {
       return next(new HttpError(401, "Invalid authentication token"));

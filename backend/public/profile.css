@@ -251,6 +251,61 @@
     position: static;
 }
 
+.profile-edit-input {
+  font-size: 14px;
+  border: 2px solid #504e76;
+  padding: 8px 72px 8px 8px;
+  border-radius: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  background-color: #fdf8e2;
+  color: #504e76;
+  font-family: "Poppins", sans-serif;
+}
+
+.profile-security-section {
+  margin-top: 18px;
+  padding: 16px;
+  border: 2px solid #e6dfc5;
+  border-radius: 12px;
+  background: #fffaf0;
+}
+
+.profile-security-section h3 {
+  margin: 0 0 6px 0;
+  color: #504e76;
+}
+
+.profile-security-help {
+  margin: 0 0 12px 0;
+  color: #706d8f;
+  font-size: 13px;
+}
+
+.password-field--profile {
+  position: relative;
+  margin-top: 10px;
+}
+
+.password-field--profile .password-toggle-btn {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: #504e76;
+  cursor: pointer;
+  font-size: 13px;
+  min-width: auto;
+  padding: 0;
+}
+
+.password-field--profile .password-toggle-btn:hover {
+  background: transparent;
+  color: #625a8f;
+}
+
 .btn-reset-profile {
     background: #fdf8e2;
     color: #504e76;
@@ -812,70 +867,11 @@
   background-color: #d4cdb0;
 }
 
-/* POST MENU DROPDOWN */
-.post-header-with-menu {
-  position: relative;
-  margin-bottom: 8px;
-}
-
-.post-menu-container {
+/* PROFILE POSTS MENU POSITIONING */
+.owner-action-menu--profile-post {
   position: absolute;
   top: 0;
   right: 0;
-}
-
-.post-menu-btn {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  color: #5f764e;
-  padding: 4px 8px;
-  transition: all 0.2s;
-}
-
-.post-menu-btn:hover {
-  color: #504e76;
-  transform: scale(1.1);
-}
-
-.post-menu-dropdown {
-  position: absolute;
-  top: 28px;
-  right: 0;
-  background: #fdf8e2;
-  border: 1px solid #e6dfc5;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(80, 78, 118, 0.15);
-  min-width: 120px;
-  z-index: 100;
-}
-
-.post-menu-item {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: 10px 12px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  color: #504e76;
-  font-size: 13px;
-  font-family: "Poppins", sans-serif;
-  transition: all 0.2s;
-}
-
-.post-menu-item:first-child {
-  border-bottom: 1px solid #e6dfc5;
-}
-
-.post-menu-item:hover {
-  background-color: rgba(80, 78, 118, 0.08);
-}
-
-.post-menu-item.post-delete-btn:hover {
-  background-color: rgba(255, 107, 107, 0.1);
-  color: #ff6b6b;
 }
 
 /* PROFILE POSTS SECTION */
@@ -912,7 +908,7 @@
   box-shadow: 0 10px 22px rgba(0, 0, 0, 0.12);
 }
 
-.profile-post-wrapper .post-menu-container {
+.profile-post-wrapper .owner-action-menu--profile-post {
   position: absolute;
   top: 0;
   right: 0;
@@ -953,5 +949,58 @@
   font-family: "Poppins", sans-serif;
   font-size: 16px;
   letter-spacing: 0.5px;
+}
+
+/* Profile edit-post modal layout fixes */
+#edit-post-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2200;
+}
+
+#edit-post-modal .modal-backdrop {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+#edit-post-modal .modal-container {
+  width: min(760px, 92vw);
+  max-height: 86vh;
+  overflow-y: auto;
+  margin: 0;
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#edit-post-modal .modal-input,
+#edit-post-modal .modal-textarea {
+  width: 100%;
+  display: block;
+  box-sizing: border-box;
+  border: 2px solid #706d8f;
+  background: #fdf8e2;
+  color: #504e76;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-family: "Poppins", sans-serif;
+  font-size: 14px;
+}
+
+#edit-post-modal .modal-textarea {
+  min-height: 170px;
+  resize: vertical;
+}
+
+#edit-post-modal #modal-save-btn {
+  align-self: flex-end;
 }
 

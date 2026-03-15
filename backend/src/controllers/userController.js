@@ -8,6 +8,7 @@
  */
 
 // Import necessary modules and models
+import bcrypt from "bcryptjs";
 import Post from "../model/Post.js";
 import User from "../model/User.js";
 import HttpError from "../utils/httpError.js";
@@ -53,6 +54,46 @@ export async function updateMe(req, res, next) {
 
     if ("email" in req.body) {
       throw new HttpError(400, "Email updates are not allowed in this endpoint");
+    }
+
+    // Handle password change if any password fields are present
+    const hasPasswordChangeAttempt =
+      "currentPassword" in req.body ||
+      "newPassword" in req.body ||
+      "confirmNewPassword" in req.body;
+
+    if (hasPasswordChangeAttempt) {
+      const currentPassword = String(req.body.currentPassword || "");
+      const newPassword = String(req.body.newPassword || "");
+      const confirmNewPassword = String(req.body.confirmNewPassword || "");
+
+      if (!currentPassword) {
+        throw new HttpError(400, "Current password is required to change your password");
+      }
+
+      if (!newPassword) {
+        throw new HttpError(400, "New password is required");
+      }
+
+      if (newPassword.length < 6) {
+        throw new HttpError(400, "Password must be at least 6 characters");
+      }
+
+      if (confirmNewPassword !== newPassword) {
+        throw new HttpError(400, "New password confirmation does not match");
+      }
+
+      const matchesCurrent = await bcrypt.compare(currentPassword, req.user.passwordHash);
+      if (!matchesCurrent) {
+        throw new HttpError(401, "Current password is incorrect");
+      }
+
+      const isSamePassword = await bcrypt.compare(newPassword, req.user.passwordHash);
+      if (isSamePassword) {
+        throw new HttpError(400, "New password must be different from your current password");
+      }
+
+      req.user.passwordHash = await bcrypt.hash(newPassword, 10);
     }
 
     await req.user.save();

@@ -623,7 +623,7 @@ body {
 
 .modal-container {
   position: relative !important;
-  background: #fdf8e2;
+  background: var(--page-color, #5f764e);
   border-radius: 12px;
   width: 90%;
   max-width: 700px;
@@ -631,7 +631,7 @@ body {
   overflow-y: auto;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
   z-index: 2001 !important;
-  padding: 24px;
+  padding: 52px 16px 16px 16px;
   margin: auto;
   margin-top: 60px;
 }
@@ -640,27 +640,31 @@ body {
   position: absolute;
   top: 8px;
   right: 8px;
-  background: none;
+  background: rgba(255, 255, 255, 0.25);
   border: none;
-  font-size: 32px;
+  border-radius: 50%;
+  font-size: 28px;
   cursor: pointer;
-  color: #5f764e;
-  padding: 8px;
-  width: 48px;
-  height: 48px;
+  color: #ffffff;
+  padding: 0;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
+  transition: background 0.2s, transform 0.2s;
 }
 
 .modal-close-btn:hover {
-  color: #504e76;
+  background: rgba(255, 255, 255, 0.45);
   transform: scale(1.1);
 }
 
 #modal-post-content {
-  margin-bottom: 24px;
+  background: #fdf8e2;
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 12px;
 }
 
 #modal-post-content .article {
@@ -676,8 +680,10 @@ body {
 }
 
 .comments-section {
-  border-top: 2px solid #e6dfc5;
-  padding-top: 20px;
+  background: #fdf8e2;
+  border-radius: 10px;
+  padding: 16px 20px;
+  border-top: none;
 }
 
 .comments-title {

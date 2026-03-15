@@ -199,7 +199,7 @@ body {
     cursor: pointer;
 }
 
-.comment-item {
+.single-post-card .comment-item {
     background: white;
     padding: 10px;
     border-radius: 10px;
@@ -282,7 +282,7 @@ body {
 }
 
 /* Comment action buttons styling */
-.comment-actions button {
+.single-post-card .comment-actions button {
     background: #f1b02e;
     color: #fdf8e2;
     border: none;
@@ -294,7 +294,7 @@ body {
     transition: all 0.2s;
 }
 
-.comment-actions button:hover {
+.single-post-card .comment-actions button:hover {
     background: #d9981f;
     transform: translateY(-1px);
 }
@@ -355,32 +355,32 @@ body {
     }
 }
 
-.comment-actions button[data-action="c_up"],
-.comment-actions button[data-action="c_down"] {
+.single-post-card .comment-actions button[data-action="c_up"],
+.single-post-card .comment-actions button[data-action="c_down"] {
     background: #5f764e;
     font-size: 14px;
     padding: 4px 10px;
 }
 
-.comment-actions button[data-action="c_up"][data-active="1"] {
+.single-post-card .comment-actions button[data-action="c_up"][data-active="1"] {
     background: #a3b565;
     font-weight: bold;
 }
 
-.comment-actions button[data-action="c_down"][data-active="1"] {
+.single-post-card .comment-actions button[data-action="c_down"][data-active="1"] {
     background: #d9534f;
     font-weight: bold;
 }
 
-.comment-actions button[data-action="c_up"]:hover,
-.comment-actions button[data-action="c_down"]:hover {
+.single-post-card .comment-actions button[data-action="c_up"]:hover,
+.single-post-card .comment-actions button[data-action="c_down"]:hover {
     background: #504e76;
 }
 
-.comment-actions button[data-action="c_delete"] {
+.single-post-card .comment-actions button[data-action="c_delete"] {
     background: #d9534f;
 }
 
-.comment-actions button[data-action="c_delete"]:hover {
+.single-post-card .comment-actions button[data-action="c_delete"]:hover {
     background: #c9302c;
 }

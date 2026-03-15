@@ -96,3 +96,37 @@ export async function login(req, res, next) {
     next(error);
   }
 }
+
+export async function forgotPassword(req, res, next) {
+  try {
+    const { usernameOrEmail, newPassword, confirmNewPassword } = req.body;
+
+    if (!usernameOrEmail || !newPassword || !confirmNewPassword) {
+      throw new HttpError(400, "usernameOrEmail, newPassword, and confirmNewPassword are required");
+    }
+
+    if (String(newPassword).length < 6) {
+      throw new HttpError(400, "Password must be at least 6 characters");
+    }
+
+    if (String(newPassword) !== String(confirmNewPassword)) {
+      throw new HttpError(400, "Password confirmation does not match");
+    }
+
+    const key = String(usernameOrEmail).trim();
+    const user = await User.findOne({
+      $or: [{ username: key }, { email: key.toLowerCase() }]
+    });
+
+    if (!user) {
+      throw new HttpError(404, "Account not found");
+    }
+
+    user.passwordHash = await bcrypt.hash(String(newPassword), 10);
+    await user.save();
+
+    res.json({ success: true, message: "Password reset successful" });
+  } catch (error) {
+    next(error);
+  }
+}

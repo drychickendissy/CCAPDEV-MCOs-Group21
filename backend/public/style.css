@@ -16,6 +16,31 @@
   font-style: italic;
 }
 
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #fdf8e2 var(--page-color, #a3b565);
+}
+
+*::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+    background: var(--page-color, #a3b565);
+    border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: #fdf8e2;
+    border-radius: 999px;
+    border: 2px solid var(--page-color, #a3b565);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: #fffdf3;
+}
+
 
 /* Posts and Voting System */
 .posts-container {
@@ -236,6 +261,85 @@
     color: #fdf8e2;
     padding: 10px 16px;
     cursor: pointer;
+}
+
+.post-modal-shell {
+    position: relative;
+    padding-right: 72px;
+}
+
+.comment-item.comment-item-thread {
+    position: relative;
+    padding-right: 52px;
+}
+
+.owner-action-menu {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 20;
+}
+
+.owner-action-menu--comment {
+    top: 10px;
+    right: 10px;
+}
+
+.owner-action-trigger {
+    background: none;
+    border: none;
+    color: #5f764e;
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 1;
+    padding: 4px 8px;
+    border-radius: 8px;
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.owner-action-trigger:hover {
+    background: rgba(95, 118, 78, 0.08);
+    color: #504e76;
+    transform: scale(1.05);
+}
+
+.owner-action-dropdown {
+    position: absolute;
+    top: 30px;
+    right: 0;
+    min-width: 120px;
+    background: #fdf8e2;
+    border: 1px solid #e6dfc5;
+    border-radius: 8px;
+    box-shadow: 0 8px 20px rgba(80, 78, 118, 0.18);
+    overflow: hidden;
+}
+
+.owner-action-item {
+    display: block;
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: #504e76;
+    cursor: pointer;
+    font-family: "Poppins", sans-serif;
+    font-size: 13px;
+    padding: 10px 12px;
+    text-align: left;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.owner-action-item + .owner-action-item {
+    border-top: 1px solid #e6dfc5;
+}
+
+.owner-action-item:hover {
+    background: rgba(80, 78, 118, 0.08);
+}
+
+.owner-action-item-delete:hover {
+    background: rgba(217, 83, 79, 0.12);
+    color: #d9534f;
 }
 
 @media (max-width: 768px) {

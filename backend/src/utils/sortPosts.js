@@ -4,7 +4,7 @@
  * - "recent": Sorts by most recent posts (default)
  * - "top": Sorts by highest score
  * - "trending": Sorts by a combination of score and recency
- * -  "hot": Sorts by a combination of score and views
+ * -  "hot": Sorts by most recent upvote activity
  * 
  * @param {Array} posts - The array of post objects to sort
  * @param {string} sortBy - The sorting criteria ("recent", "top", "trending", "hot")
@@ -14,6 +14,15 @@
 export function applyPostSort(posts, sortBy = "recent") {
   const normalizedSort = String(sortBy || "recent").toLowerCase();
   const now = Date.now();
+  const getHotTimestamp = (post) => {
+    const explicit = new Date(post.lastUpvotedAt || 0).getTime();
+    if (!Number.isNaN(explicit) && explicit > 0) return explicit;
+
+    if ((Number(post.upvotes) || 0) <= 0) return 0;
+
+    const fallback = new Date(post.lastInteraction || post.createdAt || now).getTime();
+    return Number.isNaN(fallback) ? 0 : fallback;
+  };
 
   if (normalizedSort === "top") {
     return posts.sort((a, b) => b.score - a.score);
@@ -28,13 +37,13 @@ export function applyPostSort(posts, sortBy = "recent") {
   }
 
   if (normalizedSort === "hot") {
-    return posts.sort((a, b) => {
-      const aViews = Number(a.views || 0);
-      const bViews = Number(b.views || 0);
-      const aHot = a.score * 4 + aViews * 0.02;
-      const bHot = b.score * 4 + bViews * 0.02;
-      return bHot - aHot;
-    });
+    return posts
+      .filter((post) => getHotTimestamp(post) > 0)
+      .sort((a, b) => {
+        const timeDiff = getHotTimestamp(b) - getHotTimestamp(a);
+        if (timeDiff !== 0) return timeDiff;
+        return (Number(b.score) || 0) - (Number(a.score) || 0);
+      });
   }
 
   return posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));

@@ -3,24 +3,62 @@ class SearchBar extends HTMLElement {
     connectedCallback() {
         const placeholder = this.getAttribute('placeholder') || 'Search posts...';
         const targetSelector = this.getAttribute('target') || '.article';
+        const guestLocked = this.isGuestLocked();
+        const resolvedPlaceholder = guestLocked ? 'Login to use search' : placeholder;
         
         this.innerHTML = `
             <div class="search-wrapper">
                 <input 
                     type="text" 
                     class="search-input" 
-                    placeholder="${placeholder}"
+                    placeholder="${resolvedPlaceholder}"
+                    ${guestLocked ? 'readonly aria-disabled="true" data-guest-locked="1"' : ''}
                 />
             </div>
         `;
+
+        if (guestLocked) {
+            this.setAttribute('data-guest-locked', '1');
+        } else {
+            this.removeAttribute('data-guest-locked');
+        }
         
         this.attachListeners(targetSelector);
+    }
+
+    isGuestLocked() {
+        if (this.getAttribute('guest-lock') === 'false') return false;
+        return !(localStorage.getItem('currentUserId') || '').trim();
+    }
+
+    showGuestMessage() {
+        if (typeof AlertModal !== 'undefined' && typeof AlertModal.show === 'function') {
+            AlertModal.show('Please login or sign up to use search.', 'error');
+        }
     }
     
     attachListeners(targetSelector) {
         const input = this.querySelector('.search-input');
         
         if (input) {
+            if (this.isGuestLocked()) {
+                const blockGuestSearch = (event) => {
+                    if (event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    input.blur();
+                    this.showGuestMessage();
+                };
+
+                input.addEventListener('focus', blockGuestSearch);
+                input.addEventListener('click', blockGuestSearch);
+                input.addEventListener('keydown', blockGuestSearch);
+                input.addEventListener('beforeinput', blockGuestSearch);
+                input.addEventListener('paste', blockGuestSearch);
+                return;
+            }
+
             input.addEventListener('keyup', () => {
                 this.filterPosts(targetSelector);
                 // Trigger global filter function if exists (for category coordination)
