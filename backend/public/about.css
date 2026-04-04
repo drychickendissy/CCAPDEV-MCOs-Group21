@@ -55,3 +55,9 @@
 .about-section ul li {
   margin-bottom: 6px;
 }
+
+.about-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
