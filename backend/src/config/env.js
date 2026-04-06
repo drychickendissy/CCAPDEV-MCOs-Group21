@@ -13,7 +13,9 @@ dotenv.config();
 // Define the `env` object with configuration values, using environment variables or defaults
 const env = {
   port: Number(process.env.PORT || 3000),
-  mongoUri: process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/animo_commons",
+  // Accept either MONGODB_URI or MONGO_URI for flexibility (Render may use either name)
+  mongoUri:
+    process.env.MONGODB_URI || process.env.MONGO_URI || "mongodb://127.0.0.1:27017/animo_commons",
   sessionSecret: process.env.SESSION_SECRET || "development-session-secret",
   jwtSecret: process.env.JWT_SECRET || "development-secret",
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d"
