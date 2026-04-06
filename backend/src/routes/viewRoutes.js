@@ -2,7 +2,7 @@
  * ### `src/routes/viewRoutes.js`
  * - Server-rendered page routing for Handlebars views.
  * - Root behavior:
- *   - `/` redirects to `/index`
+ *   - `/` redirects to `/home`
  * - Renders pages with route-specific flags that control CSS/JS includes in layout.
  * - Includes compatibility redirects from legacy `.html` routes to clean URLs.
  */
@@ -31,18 +31,15 @@ function withQuery(req, targetPath) {
 
 // Define routes for server-rendered views, applying specific flags for CSS/JS includes as needed
 router.get("/", (req, res) => {
-  res.redirect("/index");
-});
-
-router.get("/index", (req, res) => {
-  res.render("index", {
-    title: "Animo Commons",
-    includeIndexCss: true
-  });
+  res.redirect("/home");
 });
 
 router.get("/index.html", (req, res) => {
-  res.redirect(withQuery(req, "/index"));
+  res.redirect(withQuery(req, "/home"));
+});
+
+router.get("/index", (req, res) => {
+  res.redirect(withQuery(req, "/home"));
 });
 
 // Home route with specific includes for home page styles and scripts
