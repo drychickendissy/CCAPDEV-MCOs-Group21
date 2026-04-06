@@ -77,21 +77,21 @@
   }
 
   function getAuthToken() {
-    return (localStorage.getItem(AUTH_TOKEN_KEY) || "").trim();
+    return (sessionStorage.getItem(AUTH_TOKEN_KEY) || "").trim();
   }
 
   function setSession(user, token) {
     if (token) {
-      localStorage.setItem(AUTH_TOKEN_KEY, token);
+      sessionStorage.setItem(AUTH_TOKEN_KEY, token);
     }
     if (user && user.id) {
-      localStorage.setItem(CURRENT_USER_ID_KEY, String(user.id));
+      sessionStorage.setItem(CURRENT_USER_ID_KEY, String(user.id));
     }
   }
 
   function clearSession() {
-    localStorage.removeItem(AUTH_TOKEN_KEY);
-    localStorage.removeItem(CURRENT_USER_ID_KEY);
+    sessionStorage.removeItem(AUTH_TOKEN_KEY);
+    sessionStorage.removeItem(CURRENT_USER_ID_KEY);
     localStorage.removeItem("rememberMeToken");
     csrfTokenCache = "";
   }
@@ -238,7 +238,7 @@
     window.location.href = "/login";
   }
 
-  window.CURRENT_USER_ID = localStorage.getItem(CURRENT_USER_ID_KEY) || "";
+  window.CURRENT_USER_ID = sessionStorage.getItem(CURRENT_USER_ID_KEY) || "";
   window.getAuthToken = getAuthToken;
   window.apiRequest = apiRequest;
   window.bootstrapMockDatabase = bootstrapMockDatabase;

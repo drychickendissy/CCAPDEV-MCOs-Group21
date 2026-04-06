@@ -213,8 +213,11 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       var rememberMe = rememberMeCheckbox ? rememberMeCheckbox.checked : false;
-      if (rememberMe) saveRememberMeToken(usernameOrEmail, password);
-      else clearRememberMeToken();
+      if (rememberMe) {
+        saveRememberMeToken(usernameOrEmail, password);
+      } else {
+        clearRememberMeToken();
+      }
 
       if (passwordInput) passwordInput.value = "";
       window.location.href = "/home";
