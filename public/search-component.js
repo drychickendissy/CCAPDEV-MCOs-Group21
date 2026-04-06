@@ -28,7 +28,7 @@ class SearchBar extends HTMLElement {
 
     isGuestLocked() {
         if (this.getAttribute('guest-lock') === 'false') return false;
-        return !(localStorage.getItem('currentUserId') || '').trim();
+        return !(sessionStorage.getItem('currentUserId') || '').trim();
     }
 
     showGuestMessage() {

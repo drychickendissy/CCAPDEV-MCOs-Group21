@@ -91,7 +91,7 @@ class ProfilePosts extends HTMLElement {
     }
 
     render() {
-        const viewedUserId = typeof window.getViewedUserId === 'function' ? window.getViewedUserId() : ((localStorage.getItem('currentUserId') || '').trim());
+        const viewedUserId = typeof window.getViewedUserId === 'function' ? window.getViewedUserId() : ((sessionStorage.getItem('currentUserId') || '').trim());
         const isOwnProfile = typeof window.isViewingOwnProfile === 'function' ? window.isViewingOwnProfile() : true;
         const db = typeof PostsComponent_Instance !== 'undefined' ? PostsComponent_Instance.getDatabase() : null;
         
