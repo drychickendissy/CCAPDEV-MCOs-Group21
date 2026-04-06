@@ -31,7 +31,18 @@ function withQuery(req, targetPath) {
 
 // Define routes for server-rendered views, applying specific flags for CSS/JS includes as needed
 router.get("/", (req, res) => {
-  res.redirect("/home");
+  res.redirect("/index");
+});
+
+router.get("/index", (req, res) => {
+  res.render("index", {
+    title: "Animo Commons",
+    includeIndexCss: true
+  });
+});
+
+router.get("/index.html", (req, res) => {
+  res.redirect(withQuery(req, "/index"));
 });
 
 // Home route with specific includes for home page styles and scripts
