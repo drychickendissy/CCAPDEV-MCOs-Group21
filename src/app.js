@@ -47,7 +47,7 @@ app.use(
   session({
     secret: env.sessionSecret,
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true,
     store: MongoStore.create({
       mongoUrl: env.mongoUri,
       collectionName: "sessions"
