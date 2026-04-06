@@ -7,8 +7,7 @@ function getHotTimestamp(post) {
     const explicit = Number(post && post.lastUpvotedAt) || 0;
     if (explicit > 0) return explicit;
 
-    if ((Number(post && post.upvotes) || 0) <= 0) return 0;
-
+    // Include posts without votes using creation/interaction time as a hot fallback.
     const fallback = new Date(post.lastInteraction || post.date || 0).getTime();
     return Number.isNaN(fallback) ? 0 : fallback;
 }

@@ -18,8 +18,7 @@ export function applyPostSort(posts, sortBy = "recent") {
     const explicit = new Date(post.lastUpvotedAt || 0).getTime();
     if (!Number.isNaN(explicit) && explicit > 0) return explicit;
 
-    if ((Number(post.upvotes) || 0) <= 0) return 0;
-
+    // Keep zero-vote posts visible by falling back to interaction/create timestamps.
     const fallback = new Date(post.lastInteraction || post.createdAt || now).getTime();
     return Number.isNaN(fallback) ? 0 : fallback;
   };
@@ -37,13 +36,11 @@ export function applyPostSort(posts, sortBy = "recent") {
   }
 
   if (normalizedSort === "hot") {
-    return posts
-      .filter((post) => getHotTimestamp(post) > 0)
-      .sort((a, b) => {
-        const timeDiff = getHotTimestamp(b) - getHotTimestamp(a);
-        if (timeDiff !== 0) return timeDiff;
-        return (Number(b.score) || 0) - (Number(a.score) || 0);
-      });
+    return posts.sort((a, b) => {
+      const timeDiff = getHotTimestamp(b) - getHotTimestamp(a);
+      if (timeDiff !== 0) return timeDiff;
+      return (Number(b.score) || 0) - (Number(a.score) || 0);
+    });
   }
 
   return posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));

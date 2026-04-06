@@ -74,9 +74,7 @@
     var lastUpvotedAt = Number(post.lastUpvotedAt) || 0;
     if (lastUpvotedAt > 0) return lastUpvotedAt;
 
-    var upvotes = Number(post.upvotes) || 0;
-    if (upvotes <= 0) return 0;
-
+    // Keep zero-vote posts visible by falling back to their most recent known activity/date.
     var legacyFallback = new Date(post.lastInteraction || post.createdAt || post.date || 0).getTime();
     return Number.isNaN(legacyFallback) ? 0 : legacyFallback;
   }
@@ -683,7 +681,6 @@
       if (authorId) posts = posts.filter(p => String(p.authorId || "") === authorId);
 
       if (sortBy === "hot") {
-        posts = posts.filter((post) => getHotTimestamp(post) > 0);
         posts.sort((a, b) => {
           var hotA = getHotTimestamp(a);
           var hotB = getHotTimestamp(b);
