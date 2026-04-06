@@ -1,66 +1,71 @@
 
-# CCAPDEV Machine Project – Phase 2  
-**Course:** CCAPDEV Term 1, AY 2023–2024  
-**Phase:** Back-End Development  
-**Weight:** 20% of final grade  
+# CCAPDEV Machine Project – Phase 3
+**Course:** CCAPDEV Term 2, AY 2025–2026  
+**Phase:** Web App Deployment
+**Weight:** 30% of final grade  
 
 ---
 
 ## Project Overview
 
-This repository contains the Phase 2 submission for Animo Commons using Node.js, Express, MongoDB (Mongoose), and Handlebars.
-For this phase, the group is required to develop the back-end logic of the chosen web application.
-The README.md file at the root directory of the repository should contain instructions on how to set-up and to run the application locally through a Node.js server.
+
 
 --- 
-## Grading Rubric (Total: 75 pts)
-
-| Criteria | Excellent | Very Good | Good | Developing | No Marks | Points |
-|---|---|---|---|---|---|---|
-| **Database** | **20 pts** – Implemented database model is 100% complete. | **12 pts** – Implemented database model is partially complete (>75%). | **7 pts** – Implemented database model is partially complete (>50%). | **3 pts** – Implemented database model is sparsely complete (>25%). | **0 pts** – Database is not implemented. | **20** |
-| **Views** | **15 pts** – All views needed for all features are complete and navigable from the index page. | – | **7 pts** – Not all views are navigable within the site; some require direct URL access. Views are not in proper folder. | – | **0 pts** – Views are still in HTML; project is not implemented with a template engine. | **15** |
-| **Controller** | **20 pts** – Properly routes all incoming requests to the correct response/data. | **15 pts** – Properly routes most incoming requests (1–2 missed routes). | **10 pts** – Properly routes most incoming requests (3–4 missed routes). | **5 pts** – Properly routes most incoming requests (>5 missed routes). | **0 pts** – Does not accomplish the app’s intent. | **20** |
-| **Content Organization** | **5 pts** – Information presentation, access, and manipulation are clear and appropriate to the feature. | – | **2 pts** – Presentation is acceptable but could be more appropriate. | – | **0 pts** – Content cannot be accessed or manipulated. | **5** |
-| **Navigation** | **5 pts** – App is easy to navigate. | – | **2 pts** – Users are sometimes confused by navigation. | – | **0 pts** – Users cannot navigate without developer help. | **5** |
-| **Visual Design** | **5 pts** – View aligns with all features; users can complete tasks easily. | – | **2 pts** – View aligns with some features; task steps may be confusing. | – | **0 pts** – Users cannot complete tasks without developer help. | **5** |
-| **Graphics** | **5 pts** – Graphics/icons are appropriate, clear, and supported with text if needed. | – | **2 pts** – Graphics fit app purpose but are low quality. | – | **0 pts** – Graphics are absent or distracting. | **5** |
 
 ## Project Structure
 
-- `backend/src/model/` – Mongoose models and database entities
-- `backend/src/controllers/` – Route handlers/business logic
-- `backend/src/routes/` – API and view routes
-- `backend/src/views/` – Handlebars views
-- `backend/src/views/layouts/` – Handlebars layouts
-- `backend/src/views/partials/` – Reusable template partials
-- `backend/public/` – Static CSS/JS/assets
+- `src/model/` - Mongoose models and database entities
+- `src/controllers/` - Route handlers and business logic
+- `src/routes/` - API and view routes
+- `src/views/` - Handlebars views
+- `src/views/layouts/` - Handlebars layouts
+- `src/views/partials/` - Reusable template partials
+- `public/` - Static CSS, JavaScript, and assets
+- `scripts/` - Utility scripts (seed, free-port)
 
 ## Requirements
 
 - Node.js 18+
-- MongoDB running locally (default: `mongodb://127.0.0.1:27017/animo_commons`)
+- npm 9+
+- MongoDB Atlas cluster (cloud) or local MongoDB
 
 ## Quick Start
 
-If setup is already done, run the backend with:
+If setup is already done, run the app with:
 
 ```bash
-npm --prefix backend run dev
+npm run dev
 ```
 
-## First-Time Setup
+## First-Time Setup (Local Startup)
 
 From the repository root:
 
-1. Install backend dependencies:
-   - `npm --prefix backend install`
+1. Install dependencies:
+   - `npm install`
 2. Seed sample data:
-   - `npm --prefix backend run seed`
+   - `npm run seed`
 3. Start development server:
-   - `npm --prefix backend run dev`
+   - `npm run dev`
 
 Server runs at:
 - `http://localhost:3000`
+
+## Environment Variables
+
+Create a `.env` file in the project root and define the following:
+
+```env
+PORT=3000
+MONGODB_URI=<your-mongodb-atlas-connection-string>
+SESSION_SECRET=<strong-random-session-secret>
+JWT_SECRET=<strong-random-jwt-secret>
+JWT_EXPIRES_IN=7d
+```
+
+Notes:
+- `MONGODB_URI` defaults to `mongodb://127.0.0.1:27017/animo_commons` if not set.
+- For production, always use a secure Atlas URI and strong secrets.
 
 ## Main Routes
 
@@ -81,6 +86,40 @@ Server runs at:
 - Users: `/api/users/*`
 - Posts + Comments + Votes: `/api/posts/*`
 
+## Deployment
+
+This project is deployed on Railway and uses MongoDB Atlas as the cloud database.
+
+### Production URL
+
+The live deployment is available at:
+
+- https://animocommons.up.railway.app
+
+### Railway
+
+1. Connect this GitHub repository to a Railway project.
+2. Railway uses the `Procfile` (`web: npm start`) to run the app.
+3. Set the environment variables in Railway:
+   - `MONGODB_URI` (MongoDB Atlas connection string)
+   - `SESSION_SECRET`
+   - `JWT_SECRET`
+   - `JWT_EXPIRES_IN` (optional, defaults to `7d`)
+   - `PORT` is automatically provided by Railway.
+
+### MongoDB Atlas
+
+1. Create a cluster in MongoDB Atlas.
+2. Create a database user with read/write access.
+3. Add Railway egress IPs to Atlas network access (or allow `0.0.0.0/0` temporarily for testing).
+4. Copy the Atlas connection string and set it as `MONGODB_URI` in Railway.
+
+Example URI format:
+
+```text
+mongodb+srv://<username>:<password>@<cluster-url>/animo_commons?retryWrites=true&w=majority
+```
+
 ## Routing Notes
 
 - Legacy `.html` paths are still supported and redirected to clean routes:
@@ -94,6 +133,6 @@ Server runs at:
 
 ## View Layer Notes
 
-- Handlebars layout flags control page-specific CSS/JS includes in `backend/src/views/layouts/main.hbs`.
-- Home page runtime logic is loaded from `backend/public/home.js` (extracted from inline script).
-- Index page styling is loaded from `backend/public/index.css` (extracted from inline style).
+- Handlebars layout flags control page-specific CSS/JS includes in `src/views/layouts/main hbs`.
+- Home page runtime logic is loaded from `public/home.js`.
+- Index page styling is loaded from `public/index.css`.

@@ -1607,6 +1607,29 @@
     }
   };
 
+  window.openPostEditModal = function (postId) {
+    var post = window.PostsComponent_Instance.getPostById(postId);
+    if (!post) return;
+
+    var currentUserId = getCurrentUserId();
+    if (!currentUserId || String(post.authorId) !== String(currentUserId)) return;
+
+    window.openPostModal(postId);
+
+    var modalContent = document.getElementById("modal-post-content");
+    if (!modalContent) return;
+
+    var editBox = modalContent.querySelector("[data-post-edit-box]");
+    if (editBox && editBox.style.display === "none") {
+      var editToggleBtn = modalContent.querySelector('[data-post-action="edit_toggle"]');
+      if (editToggleBtn) {
+        editToggleBtn.click();
+      } else {
+        editBox.style.display = "block";
+      }
+    }
+  };
+
   window.closePostModal = function () {
     var modal = document.getElementById("post-view-modal");
     if (modal) modal.style.display = "none";

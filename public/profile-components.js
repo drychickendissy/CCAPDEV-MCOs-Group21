@@ -205,78 +205,14 @@ class ProfilePosts extends HTMLElement {
             btn.onclick = (e) => {
                 e.stopPropagation();
                 const postId = btn.getAttribute('data-id');
-                const post = PostsComponent_Instance.getPostById(postId);
-                if (post) {
-                    const modal = document.getElementById('edit-post-modal');
-                    const titleInput = document.getElementById('edit-post-title');
-                    const contentInput = document.getElementById('edit-post-content');
-                    const categoryInput = document.getElementById('edit-post-category');
-                    const collegeInput = document.getElementById('edit-post-college');
-                    const saveBtn = document.getElementById('modal-save-btn');
-                    
-                    // Populate modal with current post data
-                    titleInput.value = post.title;
-                    contentInput.value = post.content;
-                    if (categoryInput) {
-                        categoryInput.value = post.category || 'discussion';
-                    }
-                    if (collegeInput) {
-                        collegeInput.value = post.college || '';
-                    }
+                if (!postId || typeof window.openPostModal !== 'function') {
+                    return;
+                }
 
-                    // Update counters
-                    const titleCounter = document.getElementById('title-counter');
-                    const contentCounter = document.getElementById('content-counter');
-                    if (titleCounter) titleCounter.textContent = titleInput.value.length + " / 100";
-                    if (contentCounter) contentCounter.textContent = contentInput.value.length + " / 500";
-                    
-                    // Show modal
-                    modal.style.display = 'flex';
-                    
-                    // Save handler
-                    const saveHandler = () => {
-                        const newTitle = titleInput.value.trim();
-                        const newContent = contentInput.value.trim();
-                        const newCategory = categoryInput ? categoryInput.value.trim() : (post.category || '');
-                        const newCollege = collegeInput ? collegeInput.value.trim() : (post.college || '');
-                        
-                        if (newTitle === '') {
-                            if (typeof AlertModal !== 'undefined') {
-                                AlertModal.show('Title cannot be empty', 'error');
-                            }
-                            return;
-                        }
-                        
-                        if (newContent === '') {
-                            if (typeof AlertModal !== 'undefined') {
-                                AlertModal.show('Content cannot be empty', 'error');
-                            }
-                            return;
-                        }
-                        
-                        PostsComponent_Instance.editPost(postId, newTitle, newContent, newCategory, newCollege);
-                        if (typeof AlertModal !== 'undefined') {
-                            AlertModal.show('Post updated!', 'success');
-                        }
-                        
-                        closeEditPostModal();
-                        self.render();
-                        self.attachListeners();
-                        // Update stats sidebar
-                        if (typeof window.updateProfileStats === 'function') {
-                            window.updateProfileStats();
-                        }
-                    };
-                    
-                    // Remove old listener to prevent duplicates
-                    saveBtn.onclick = saveHandler;
-                    
-                    // Close modal when clicking outside (on backdrop)
-                    modal.onclick = (e) => {
-                        if (e.target === modal || e.target.classList.contains('modal-backdrop')) {
-                            closeEditPostModal();
-                        }
-                    };
+                if (typeof window.openPostEditModal === 'function') {
+                    window.openPostEditModal(postId);
+                } else {
+                    window.openPostModal(postId);
                 }
             };
         });
